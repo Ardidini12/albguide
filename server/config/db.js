@@ -57,11 +57,10 @@ export async function ensureSchema() {
   await pool.query(`
     create table if not exists public.packages (
       id uuid primary key default gen_random_uuid(),
-      destination_id uuid not null references public.destinations(id) on delete cascade,
+      destination_id uuid not null references public.destinations(id) on delete restrict,
       name text not null,
       slug text unique not null,
       about text,
-      description text,
       what_youll_see text,
       itinerary text,
       whats_included text,
@@ -72,8 +71,8 @@ export async function ensureSchema() {
       additional_information text,
       cancellation_policy text,
       help text,
-      duration_minutes integer,
-      price_cents integer,
+      duration text,
+      price text,
       currency text not null default 'EUR',
       languages text[] not null default '{}',
       group_size_max integer,
@@ -88,6 +87,67 @@ export async function ensureSchema() {
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now()
     );
+
+    do $$
+    declare
+      fk_name text;
+      fk_del char;
+    begin
+      if exists (
+        select 1
+        from information_schema.columns
+        where table_schema='public' and table_name='packages' and column_name='duration_minutes'
+      ) and not exists (
+        select 1
+        from information_schema.columns
+        where table_schema='public' and table_name='packages' and column_name='duration'
+      ) then
+        alter table public.packages rename column duration_minutes to duration;
+        alter table public.packages alter column duration type text using duration::text;
+      end if;
+
+      if exists (
+        select 1
+        from information_schema.columns
+        where table_schema='public' and table_name='packages' and column_name='price_cents'
+      ) and not exists (
+        select 1
+        from information_schema.columns
+        where table_schema='public' and table_name='packages' and column_name='price'
+      ) then
+        alter table public.packages rename column price_cents to price;
+        alter table public.packages alter column price type text using price::text;
+      end if;
+
+      select c.conname, c.confdeltype
+        into fk_name, fk_del
+      from pg_constraint c
+      join pg_class t on t.oid = c.conrelid
+      join pg_class rt on rt.oid = c.confrelid
+      where t.relname = 'packages'
+        and rt.relname = 'destinations'
+        and c.contype = 'f'
+      limit 1;
+
+      if fk_name is not null and fk_del <> 'r' then
+        execute 'alter table public.packages drop constraint ' || quote_ident(fk_name);
+        execute 'alter table public.packages add constraint packages_destination_id_fkey foreign key (destination_id) references public.destinations(id) on delete restrict';
+      end if;
+
+      if exists (
+        select 1
+        from information_schema.columns
+        where table_schema='public' and table_name='packages' and column_name='description'
+      ) then
+        update public.packages
+          set about = description
+        where (about is null or btrim(about) = '')
+          and description is not null
+          and btrim(description) <> '';
+
+        alter table public.packages drop column if exists description;
+      end if;
+    end $$;
 
     create index if not exists packages_destination_id_idx on public.packages(destination_id);
     create index if not exists packages_is_active_idx on public.packages(is_active);

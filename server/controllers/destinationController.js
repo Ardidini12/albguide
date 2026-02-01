@@ -122,6 +122,9 @@ export async function removeAdmin(req, res) {
     if (!deletedId) return res.status(404).json({ message: 'Destination not found' });
     return res.json({ deletedId });
   } catch (err) {
+    if (String(err?.code) === '23503') {
+      return res.status(409).json({ message: 'Cannot delete destination while it has packages. Delete/move packages first.' });
+    }
     console.error(err);
     return res.status(500).json({ message: 'Internal server error' });
   }

@@ -5,7 +5,6 @@ export async function createPackage({
   name,
   slug,
   about,
-  description,
   whatYoullSee,
   itinerary,
   whatsIncluded,
@@ -16,8 +15,8 @@ export async function createPackage({
   additionalInformation,
   cancellationPolicy,
   help,
-  durationMinutes,
-  priceCents,
+  duration,
+  price,
   currency,
   languages,
   groupSizeMax,
@@ -36,7 +35,6 @@ export async function createPackage({
       name,
       slug,
       about,
-      description,
       what_youll_see,
       itinerary,
       whats_included,
@@ -47,8 +45,8 @@ export async function createPackage({
       additional_information,
       cancellation_policy,
       help,
-      duration_minutes,
-      price_cents,
+      duration,
+      price,
       currency,
       languages,
       group_size_max,
@@ -67,7 +65,6 @@ export async function createPackage({
       name,
       slug,
       about || null,
-      description || null,
       whatYoullSee || null,
       itinerary || null,
       whatsIncluded || null,
@@ -78,8 +75,8 @@ export async function createPackage({
       additionalInformation || null,
       cancellationPolicy || null,
       help || null,
-      Number.isFinite(durationMinutes) ? durationMinutes : null,
-      Number.isFinite(priceCents) ? priceCents : null,
+      typeof duration === 'string' ? (duration.trim() ? duration.trim() : null) : duration != null ? String(duration) : null,
+      typeof price === 'string' ? (price.trim() ? price.trim() : null) : price != null ? String(price) : null,
       currency || 'EUR',
       Array.isArray(languages) ? languages : [],
       Number.isFinite(groupSizeMax) ? groupSizeMax : null,
@@ -165,7 +162,6 @@ export async function updatePackageById(
     name,
     slug,
     about,
-    description,
     whatYoullSee,
     itinerary,
     whatsIncluded,
@@ -176,8 +172,8 @@ export async function updatePackageById(
     additionalInformation,
     cancellationPolicy,
     help,
-    durationMinutes,
-    priceCents,
+    duration,
+    price,
     currency,
     languages,
     groupSizeMax,
@@ -210,10 +206,6 @@ export async function updatePackageById(
   if (about !== undefined) {
     fields.push(`about=$${i++}`);
     values.push(about || null);
-  }
-  if (description !== undefined) {
-    fields.push(`description=$${i++}`);
-    values.push(description || null);
   }
   if (whatYoullSee !== undefined) {
     fields.push(`what_youll_see=$${i++}`);
@@ -255,13 +247,13 @@ export async function updatePackageById(
     fields.push(`help=$${i++}`);
     values.push(help || null);
   }
-  if (durationMinutes !== undefined) {
-    fields.push(`duration_minutes=$${i++}`);
-    values.push(Number.isFinite(durationMinutes) ? durationMinutes : null);
+  if (duration !== undefined) {
+    fields.push(`duration=$${i++}`);
+    values.push(typeof duration === 'string' ? (duration.trim() ? duration.trim() : null) : duration != null ? String(duration) : null);
   }
-  if (priceCents !== undefined) {
-    fields.push(`price_cents=$${i++}`);
-    values.push(Number.isFinite(priceCents) ? priceCents : null);
+  if (price !== undefined) {
+    fields.push(`price=$${i++}`);
+    values.push(typeof price === 'string' ? (price.trim() ? price.trim() : null) : price != null ? String(price) : null);
   }
   if (currency !== undefined) {
     fields.push(`currency=$${i++}`);

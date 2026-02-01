@@ -12,7 +12,7 @@ type PackageRow = {
   id: string;
   name: string;
   slug: string;
-  description: string | null;
+  about: string | null;
   media_urls?: string[];
   destination_name?: string;
   destination_region?: string;
@@ -123,7 +123,7 @@ export function UserFavoritesPage() {
                           {p.destination_region ? ` • ${p.destination_region}` : ''}
                         </div>
                       )}
-                      {p?.description && <div className="mt-2 text-sm text-gray-600 line-clamp-2">{p.description}</div>}
+                      {p?.about && <div className="mt-2 text-sm text-gray-600 line-clamp-2">{p.about}</div>}
                     </div>
                   </Link>
                 );

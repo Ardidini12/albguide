@@ -53,12 +53,12 @@ export function Header() {
               </>
             )}
 
-            {user?.isAdmin && (
+            {/* {user?.isAdmin && (
               <>
                 <NavItem to="/admin/packages" label="Admin Packages" />
                 <NavItem to="/admin/reviews" label="Admin Reviews" />
               </>
-            )}
+            )} */}
           </nav>
 
           <div className="flex items-center gap-3">
