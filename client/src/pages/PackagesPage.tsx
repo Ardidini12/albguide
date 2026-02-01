@@ -7,9 +7,9 @@ type PackageRow = {
   destination_id: string;
   name: string;
   slug: string;
-  description: string | null;
-  duration_minutes: number | null;
-  price_cents: number | null;
+  about: string | null;
+  duration: string | null;
+  price: string | null;
   currency: string;
   media_urls?: string[];
   is_active: boolean;
@@ -19,10 +19,11 @@ type PackageRow = {
   destination_region?: string;
 };
 
-function formatPrice(priceCents: number | null, currency: string) {
-  if (!priceCents || priceCents <= 0) return null;
-  const value = (priceCents / 100).toFixed(0);
-  return `${value} ${currency || 'EUR'}`;
+function formatPrice(price: string | null, currency: string) {
+  const v = String(price || '').trim();
+  if (!v) return null;
+  if (/[a-zA-Z]/.test(v)) return v;
+  return currency ? `${v} ${currency}` : v;
 }
 
 function isVideoUrl(url: string) {
@@ -81,7 +82,7 @@ export function PackagesPage() {
             {sorted.map((p) => {
               const media = Array.isArray(p.media_urls) ? p.media_urls.filter(Boolean) : [];
               const cover = media[0] || '';
-              const price = formatPrice(p.price_cents ?? null, p.currency);
+              const price = formatPrice(p.price ?? null, p.currency);
               return (
                 <Link
                   key={p.id}
@@ -133,13 +134,11 @@ export function PackagesPage() {
                       )}
                     </div>
 
-                    {p.description && <p className="mt-2 text-gray-600 line-clamp-3">{p.description}</p>}
+                    {p.about && <p className="mt-2 text-gray-600 line-clamp-3">{p.about}</p>}
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {p.duration_minutes ? (
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                          {Math.round(p.duration_minutes / 60)}h
-                        </span>
+                      {p.duration ? (
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">{p.duration}</span>
                       ) : null}
                       <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
                         Bookable

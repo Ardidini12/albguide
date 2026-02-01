@@ -9,7 +9,6 @@ type PackageRow = {
   name: string;
   slug: string;
   about: string | null;
-  description: string | null;
   what_youll_see: string | null;
   itinerary: string | null;
   whats_included: string | null;
@@ -20,8 +19,8 @@ type PackageRow = {
   additional_information: string | null;
   cancellation_policy: string | null;
   help: string | null;
-  duration_minutes: number | null;
-  price_cents: number | null;
+  duration: string | null;
+  price: string | null;
   currency: string;
   media_urls?: string[];
   is_active: boolean;
@@ -60,10 +59,11 @@ function isVideoUrl(url: string) {
   return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.mov') || clean.endsWith('.m4v');
 }
 
-function formatPrice(priceCents: number | null, currency: string) {
-  if (!priceCents || priceCents <= 0) return null;
-  const value = (priceCents / 100).toFixed(0);
-  return `${value} ${currency || 'EUR'}`;
+function formatPrice(price: string | null, currency: string) {
+  const v = String(price || '').trim();
+  if (!v) return null;
+  if (/[a-zA-Z]/.test(v)) return v;
+  return currency ? `${v} ${currency}` : v;
 }
 
 export function PackageDetailsPage() {
@@ -100,7 +100,7 @@ export function PackageDetailsPage() {
   const currentUrl = mediaUrls[mediaIndex] || '/placeholder.jpg';
   const isVideo = isVideoUrl(String(currentUrl));
 
-  const price = formatPrice(pkg?.price_cents ?? null, pkg?.currency || 'EUR');
+  const price = formatPrice(pkg?.price ?? null, pkg?.currency || 'EUR');
 
   const loadAll = async () => {
     if (!slug) return;
@@ -318,13 +318,13 @@ export function PackageDetailsPage() {
                   </div>
                 </div>
 
-                {pkg.description && <p className="mt-4 text-gray-700 leading-relaxed">{pkg.description}</p>}
+                {pkg.about && <p className="mt-4 text-gray-700 leading-relaxed">{pkg.about}</p>}
 
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pkg.duration_minutes ? (
+                  {pkg.duration ? (
                     <div className="rounded-xl border p-4">
                       <div className="text-sm text-gray-500">Duration</div>
-                      <div className="mt-1 font-semibold text-gray-900">{Math.round(pkg.duration_minutes / 60)}h</div>
+                      <div className="mt-1 font-semibold text-gray-900">{pkg.duration}</div>
                     </div>
                   ) : null}
 

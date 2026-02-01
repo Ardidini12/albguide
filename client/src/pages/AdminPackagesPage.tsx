@@ -4,15 +4,41 @@ import { createClient } from '@supabase/supabase-js';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
+type DestinationRow = {
+  id: string;
+  name: string;
+  region: string;
+  slug: string;
+  is_active: boolean;
+};
+
 type PackageRow = {
   id: string;
   destination_id: string;
   name: string;
   slug: string;
-  description: string | null;
-  duration_minutes: number | null;
-  price_cents: number | null;
+  about?: string | null;
+  what_youll_see?: string | null;
+  itinerary?: string | null;
+  whats_included?: string | null;
+  whats_not_included?: string | null;
+  what_to_expect?: string | null;
+  meeting_and_pickup?: string | null;
+  accessibility?: string | null;
+  additional_information?: string | null;
+  cancellation_policy?: string | null;
+  help?: string | null;
+  duration?: string | null;
+  price?: string | null;
   currency: string;
+  languages?: string[];
+  group_size_max?: number | null;
+  min_age?: number | null;
+  location_name?: string | null;
+  meeting_point_name?: string | null;
+  meeting_point_address?: string | null;
+  meeting_point_lat?: number | null;
+  meeting_point_lng?: number | null;
   media_urls?: string[];
   media_paths?: string[];
   is_active: boolean;
@@ -41,7 +67,9 @@ export function AdminPackagesPage() {
   }, []);
 
   const [items, setItems] = useState<PackageRow[]>([]);
+  const [destinations, setDestinations] = useState<DestinationRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,10 +77,28 @@ export function AdminPackagesPage() {
   const [destinationId, setDestinationId] = useState('');
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState<number | ''>('');
-  const [priceCents, setPriceCents] = useState<number | ''>('');
+  const [about, setAbout] = useState('');
+  const [whatYoullSee, setWhatYoullSee] = useState('');
+  const [itinerary, setItinerary] = useState('');
+  const [whatsIncluded, setWhatsIncluded] = useState('');
+  const [whatsNotIncluded, setWhatsNotIncluded] = useState('');
+  const [whatToExpect, setWhatToExpect] = useState('');
+  const [meetingAndPickup, setMeetingAndPickup] = useState('');
+  const [accessibility, setAccessibility] = useState('');
+  const [additionalInformation, setAdditionalInformation] = useState('');
+  const [cancellationPolicy, setCancellationPolicy] = useState('');
+  const [help, setHelp] = useState('');
+  const [duration, setDuration] = useState('');
+  const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('EUR');
+  const [languagesText, setLanguagesText] = useState('');
+  const [groupSizeMax, setGroupSizeMax] = useState<number | ''>('');
+  const [minAge, setMinAge] = useState<number | ''>('');
+  const [locationName, setLocationName] = useState('');
+  const [meetingPointName, setMeetingPointName] = useState('');
+  const [meetingPointAddress, setMeetingPointAddress] = useState('');
+  const [meetingPointLat, setMeetingPointLat] = useState<number | ''>('');
+  const [meetingPointLng, setMeetingPointLng] = useState<number | ''>('');
   const [isActive, setIsActive] = useState(false);
 
   const [mediaItems, setMediaItems] = useState<Array<{ path: string; url: string }>>([]);
@@ -63,10 +109,28 @@ export function AdminPackagesPage() {
     setDestinationId('');
     setName('');
     setSlug('');
-    setDescription('');
-    setDurationMinutes('');
-    setPriceCents('');
+    setAbout('');
+    setWhatYoullSee('');
+    setItinerary('');
+    setWhatsIncluded('');
+    setWhatsNotIncluded('');
+    setWhatToExpect('');
+    setMeetingAndPickup('');
+    setAccessibility('');
+    setAdditionalInformation('');
+    setCancellationPolicy('');
+    setHelp('');
+    setDuration('');
+    setPrice('');
     setCurrency('EUR');
+    setLanguagesText('');
+    setGroupSizeMax('');
+    setMinAge('');
+    setLocationName('');
+    setMeetingPointName('');
+    setMeetingPointAddress('');
+    setMeetingPointLat('');
+    setMeetingPointLng('');
     setIsActive(false);
     setMediaItems([]);
     setPrimaryPath('');
@@ -85,8 +149,21 @@ export function AdminPackagesPage() {
     }
   };
 
+  const loadDestinations = async () => {
+    setDestinationsLoading(true);
+    try {
+      const data = await apiFetch('/admin/destinations', { headers: authHeader(token) });
+      setDestinations(data.destinations || []);
+    } catch (e) {
+      setError((prev) => prev || (e as Error).message);
+    } finally {
+      setDestinationsLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadDestinations();
   }, []);
 
   const onEdit = (p: PackageRow) => {
@@ -94,10 +171,29 @@ export function AdminPackagesPage() {
     setDestinationId(String(p.destination_id || ''));
     setName(p.name || '');
     setSlug(p.slug || '');
-    setDescription(p.description || '');
-    setDurationMinutes(p.duration_minutes ?? '');
-    setPriceCents(p.price_cents ?? '');
+    setAbout(String(p.about || ''));
+    setWhatYoullSee(String(p.what_youll_see || ''));
+    setItinerary(String(p.itinerary || ''));
+    setWhatsIncluded(String(p.whats_included || ''));
+    setWhatsNotIncluded(String(p.whats_not_included || ''));
+    setWhatToExpect(String(p.what_to_expect || ''));
+    setMeetingAndPickup(String(p.meeting_and_pickup || ''));
+    setAccessibility(String(p.accessibility || ''));
+    setAdditionalInformation(String(p.additional_information || ''));
+    setCancellationPolicy(String(p.cancellation_policy || ''));
+    setHelp(String(p.help || ''));
+
+    setDuration(String(p.duration || ''));
+    setPrice(String(p.price || ''));
     setCurrency(p.currency || 'EUR');
+    setLanguagesText(Array.isArray(p.languages) ? p.languages.filter(Boolean).join(', ') : '');
+    setGroupSizeMax(p.group_size_max ?? '');
+    setMinAge(p.min_age ?? '');
+    setLocationName(String(p.location_name || ''));
+    setMeetingPointName(String(p.meeting_point_name || ''));
+    setMeetingPointAddress(String(p.meeting_point_address || ''));
+    setMeetingPointLat(p.meeting_point_lat ?? '');
+    setMeetingPointLng(p.meeting_point_lng ?? '');
     setIsActive(Boolean(p.is_active));
 
     if (Array.isArray(p.media_paths) && Array.isArray(p.media_urls) && p.media_paths.length) {
@@ -180,14 +276,37 @@ export function AdminPackagesPage() {
     const deduped = Array.from(new Set(rawPaths));
     const ordered = primary ? [primary, ...deduped.filter((p) => p !== primary)] : deduped;
 
+    const languages = languagesText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const payload = {
       destination_id: destinationId,
       name,
       slug: slug || undefined,
-      description: description || null,
-      duration_minutes: durationMinutes === '' ? null : Number(durationMinutes),
-      price_cents: priceCents === '' ? null : Number(priceCents),
+      about: about || null,
+      what_youll_see: whatYoullSee || null,
+      itinerary: itinerary || null,
+      whats_included: whatsIncluded || null,
+      whats_not_included: whatsNotIncluded || null,
+      what_to_expect: whatToExpect || null,
+      meeting_and_pickup: meetingAndPickup || null,
+      accessibility: accessibility || null,
+      additional_information: additionalInformation || null,
+      cancellation_policy: cancellationPolicy || null,
+      help: help || null,
+      duration: duration || null,
+      price: price || null,
       currency,
+      languages,
+      group_size_max: groupSizeMax === '' ? null : Number(groupSizeMax),
+      min_age: minAge === '' ? null : Number(minAge),
+      location_name: locationName || null,
+      meeting_point_name: meetingPointName || null,
+      meeting_point_address: meetingPointAddress || null,
+      meeting_point_lat: meetingPointLat === '' ? null : Number(meetingPointLat),
+      meeting_point_lng: meetingPointLng === '' ? null : Number(meetingPointLng),
       media_urls: ordered,
       is_active: isActive,
     };
@@ -242,13 +361,36 @@ export function AdminPackagesPage() {
               <div className="text-sm font-semibold text-gray-900">{editingId ? 'Edit Package' : 'Create Package'}</div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Destination ID *</label>
-                <input
-                  value={destinationId}
-                  onChange={(e) => setDestinationId(e.target.value)}
-                  className="mt-1 w-full rounded-md border px-3 py-2"
-                  required
-                />
+                <label className="block text-sm font-medium text-gray-700">Destination *</label>
+
+                {destinationsLoading ? (
+                  <div className="mt-2 text-sm text-gray-600">Loading destinations…</div>
+                ) : destinations.length === 0 ? (
+                  <div className="mt-2 rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                    You need to create a destination first.
+                    <div className="mt-2">
+                      <Link to="/admin/destinations" className="text-red-700 underline">
+                        Go to Admin Destinations
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={destinationId}
+                    onChange={(e) => setDestinationId(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select destination…
+                    </option>
+                    {destinations.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.region}){d.is_active ? '' : ' [inactive]'}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -267,26 +409,107 @@ export function AdminPackagesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+                <label className="block text-sm font-medium text-gray-700">About</label>
+                <textarea value={about} onChange={(e) => setAbout(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What you'll see</label>
+                <textarea value={whatYoullSee} onChange={(e) => setWhatYoullSee(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Itinerary</label>
+                <textarea value={itinerary} onChange={(e) => setItinerary(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={4} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What's included</label>
+                <textarea value={whatsIncluded} onChange={(e) => setWhatsIncluded(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What's not included</label>
+                <textarea value={whatsNotIncluded} onChange={(e) => setWhatsNotIncluded(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">What to expect</label>
+                <textarea value={whatToExpect} onChange={(e) => setWhatToExpect(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Meeting and pickup</label>
+                <textarea value={meetingAndPickup} onChange={(e) => setMeetingAndPickup(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Accessibility</label>
+                <textarea value={accessibility} onChange={(e) => setAccessibility(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={2} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Additional information</label>
+                <textarea value={additionalInformation} onChange={(e) => setAdditionalInformation(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Cancellation policy</label>
+                <textarea value={cancellationPolicy} onChange={(e) => setCancellationPolicy(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={2} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Help</label>
+                <textarea value={help} onChange={(e) => setHelp(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" rows={2} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Duration (min)</label>
+                  <label className="block text-sm font-medium text-gray-700">Duration</label>
                   <input
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))}
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    placeholder="e.g. 7-8 hours"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Price</label>
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    placeholder="e.g. 120 EUR or 120"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Currency</label>
+                <input value={currency} onChange={(e) => setCurrency(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Languages (comma-separated)</label>
+                <input value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" placeholder="English, Albanian" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Max group size</label>
+                  <input
+                    value={groupSizeMax}
+                    onChange={(e) => setGroupSizeMax(e.target.value === '' ? '' : Number(e.target.value))}
                     className="mt-1 w-full rounded-md border px-3 py-2"
                     type="number"
                     min={0}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Price (cents)</label>
+                  <label className="block text-sm font-medium text-gray-700">Min age</label>
                   <input
-                    value={priceCents}
-                    onChange={(e) => setPriceCents(e.target.value === '' ? '' : Number(e.target.value))}
+                    value={minAge}
+                    onChange={(e) => setMinAge(e.target.value === '' ? '' : Number(e.target.value))}
                     className="mt-1 w-full rounded-md border px-3 py-2"
                     type="number"
                     min={0}
@@ -295,8 +518,41 @@ export function AdminPackagesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Currency</label>
-                <input value={currency} onChange={(e) => setCurrency(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+                <label className="block text-sm font-medium text-gray-700">Location name</label>
+                <input value={locationName} onChange={(e) => setLocationName(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Meeting point name</label>
+                <input value={meetingPointName} onChange={(e) => setMeetingPointName(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Meeting point address</label>
+                <input value={meetingPointAddress} onChange={(e) => setMeetingPointAddress(e.target.value)} className="mt-1 w-full rounded-md border px-3 py-2" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Meeting point lat</label>
+                  <input
+                    value={meetingPointLat}
+                    onChange={(e) => setMeetingPointLat(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    type="number"
+                    step="any"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Meeting point lng</label>
+                  <input
+                    value={meetingPointLng}
+                    onChange={(e) => setMeetingPointLng(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    type="number"
+                    step="any"
+                  />
+                </div>
               </div>
 
               <div>
@@ -367,32 +623,49 @@ export function AdminPackagesPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="min-w-0">
                             <div className="font-semibold text-gray-900 truncate">{p.name}</div>
                             <div className="text-xs text-gray-500">/{p.slug}</div>
                             <div className="text-xs text-gray-500">Destination: {p.destination_id}</div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-2 sm:shrink-0">
                             <Link
                               to={`/admin/packages/${p.id}/availability`}
-                              className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50"
+                              className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50 whitespace-nowrap"
                             >
                               Availability
                             </Link>
-                            <button onClick={() => onEdit(p)} className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50" type="button">
+                            <button
+                              onClick={() => onEdit(p)}
+                              className="px-3 py-1.5 rounded-md border text-sm hover:bg-gray-50 whitespace-nowrap"
+                              type="button"
+                            >
                               Edit
                             </button>
-                            <button onClick={() => onDelete(p.id)} className="px-3 py-1.5 rounded-md bg-red-700 text-white text-sm hover:bg-red-600" type="button">
+                            <button
+                              onClick={() => onDelete(p.id)}
+                              className="px-3 py-1.5 rounded-md bg-red-700 text-white text-sm hover:bg-red-600 whitespace-nowrap"
+                              type="button"
+                            >
                               Delete
                             </button>
                           </div>
                         </div>
 
-                        <div className="mt-2 text-sm text-gray-600 line-clamp-2">{p.description || '—'}</div>
+                        <div className="mt-2 text-sm text-gray-600 line-clamp-2">{p.about || '—'}</div>
 
                         <div className="mt-3 flex flex-wrap gap-2">
                           <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">{p.is_active ? 'Active' : 'Inactive'}</span>
+                          {Array.isArray(p.languages) && p.languages.length > 0 && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">Languages: {p.languages.join(', ')}</span>
+                          )}
+                          {p.group_size_max !== null && p.group_size_max !== undefined && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">Max group: {p.group_size_max}</span>
+                          )}
+                          {p.min_age !== null && p.min_age !== undefined && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">Min age: {p.min_age}</span>
+                          )}
                         </div>
                       </div>
                     </div>

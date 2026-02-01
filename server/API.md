@@ -100,14 +100,14 @@ Admin notes:
 ### Create Package (Admin)
 - `POST /admin/packages`
 - Admin only
-- Body (JSON):
+- Create a package
   - `destination_id` (uuid, required)
   - `title` (string, required)
   - `slug` (string, optional)
-  - `description` (string, optional)
+  - `about` (string, optional)
   - `highlights` (string, optional)
-  - `duration_days` (integer, optional)
-  - `price_cents` (integer, optional)
+  - `duration` (string, optional)
+  - `price` (string, optional)
   - `currency` (string, optional)
   - `max_group_size` (integer, optional)
   - `cover_image_path` (string, optional)

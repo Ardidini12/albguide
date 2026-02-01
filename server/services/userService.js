@@ -20,7 +20,7 @@ export async function getUser(id) {
 }
 
 export async function createUserAdmin({ email, password, name, isAdmin }) {
-  const passwordHash = hashPassword(password);
+  const passwordHash = await hashPassword(password);
   return await createUser({ email, passwordHash, name, isAdmin: Boolean(isAdmin) });
 }
 
@@ -28,7 +28,7 @@ export async function updateUser(id, { email, name, password, isAdmin }) {
   return await updateUserById(id, {
     email,
     name,
-    passwordHash: password !== undefined ? hashPassword(password) : undefined,
+    passwordHash: password !== undefined ? await hashPassword(password) : undefined,
     isAdmin,
   });
 }

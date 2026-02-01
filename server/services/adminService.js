@@ -12,7 +12,7 @@ export async function seedSuperuser() {
 
   const existing = await findUserByEmailWithPassword(email);
   if (!existing) {
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
     await createUser({ email, passwordHash, name, isAdmin: true });
     return;
   }
