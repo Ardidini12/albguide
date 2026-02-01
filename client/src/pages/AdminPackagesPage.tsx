@@ -97,9 +97,57 @@ export function AdminPackagesPage() {
   const [locationName, setLocationName] = useState('');
   const [meetingPointName, setMeetingPointName] = useState('');
   const [meetingPointAddress, setMeetingPointAddress] = useState('');
-  const [meetingPointLat, setMeetingPointLat] = useState<number | ''>('');
-  const [meetingPointLng, setMeetingPointLng] = useState<number | ''>('');
+  const [meetingPointLat, setMeetingPointLat] = useState('');
+  const [meetingPointLatError, setMeetingPointLatError] = useState<string | null>(null);
+  const [meetingPointLng, setMeetingPointLng] = useState('');
+  const [meetingPointLngError, setMeetingPointLngError] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
+
+  const onChangeMeetingPointLat = (raw: string) => {
+    setMeetingPointLat(raw);
+
+    const v = raw.trim();
+    if (!v) {
+      setMeetingPointLatError(null);
+      return;
+    }
+
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      setMeetingPointLatError('Latitude must be a valid number.');
+      return;
+    }
+
+    if (n < -90 || n > 90) {
+      setMeetingPointLatError('Latitude must be between -90 and 90.');
+      return;
+    }
+
+    setMeetingPointLatError(null);
+  };
+
+  const onChangeMeetingPointLng = (raw: string) => {
+    setMeetingPointLng(raw);
+
+    const v = raw.trim();
+    if (!v) {
+      setMeetingPointLngError(null);
+      return;
+    }
+
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      setMeetingPointLngError('Longitude must be a valid number.');
+      return;
+    }
+
+    if (n < -180 || n > 180) {
+      setMeetingPointLngError('Longitude must be between -180 and 180.');
+      return;
+    }
+
+    setMeetingPointLngError(null);
+  };
 
   const [mediaItems, setMediaItems] = useState<Array<{ path: string; url: string }>>([]);
   const [primaryPath, setPrimaryPath] = useState<string>('');
@@ -131,6 +179,8 @@ export function AdminPackagesPage() {
     setMeetingPointAddress('');
     setMeetingPointLat('');
     setMeetingPointLng('');
+    setMeetingPointLatError(null);
+    setMeetingPointLngError(null);
     setIsActive(false);
     setMediaItems([]);
     setPrimaryPath('');
@@ -192,8 +242,10 @@ export function AdminPackagesPage() {
     setLocationName(String(p.location_name || ''));
     setMeetingPointName(String(p.meeting_point_name || ''));
     setMeetingPointAddress(String(p.meeting_point_address || ''));
-    setMeetingPointLat(p.meeting_point_lat ?? '');
-    setMeetingPointLng(p.meeting_point_lng ?? '');
+    setMeetingPointLat(p.meeting_point_lat == null ? '' : String(p.meeting_point_lat));
+    setMeetingPointLng(p.meeting_point_lng == null ? '' : String(p.meeting_point_lng));
+    setMeetingPointLatError(null);
+    setMeetingPointLngError(null);
     setIsActive(Boolean(p.is_active));
 
     if (Array.isArray(p.media_paths) && Array.isArray(p.media_urls) && p.media_paths.length) {
@@ -271,6 +323,32 @@ export function AdminPackagesPage() {
     e.preventDefault();
     setError(null);
 
+    const latRaw = meetingPointLat.trim();
+    const lngRaw = meetingPointLng.trim();
+
+    let nextLatError: string | null = null;
+    let nextLngError: string | null = null;
+
+    if (latRaw) {
+      const lat = Number(latRaw);
+      if (!Number.isFinite(lat)) nextLatError = 'Latitude must be a valid number.';
+      else if (lat < -90 || lat > 90) nextLatError = 'Latitude must be between -90 and 90.';
+    }
+
+    if (lngRaw) {
+      const lng = Number(lngRaw);
+      if (!Number.isFinite(lng)) nextLngError = 'Longitude must be a valid number.';
+      else if (lng < -180 || lng > 180) nextLngError = 'Longitude must be between -180 and 180.';
+    }
+
+    setMeetingPointLatError(nextLatError);
+    setMeetingPointLngError(nextLngError);
+
+    if (nextLatError || nextLngError) {
+      setError('Please fix the highlighted fields.');
+      return;
+    }
+
     const rawPaths = mediaItems.map((m) => m.path).filter(Boolean);
     const primary = primaryPath || rawPaths[0] || '';
     const deduped = Array.from(new Set(rawPaths));
@@ -305,8 +383,8 @@ export function AdminPackagesPage() {
       location_name: locationName || null,
       meeting_point_name: meetingPointName || null,
       meeting_point_address: meetingPointAddress || null,
-      meeting_point_lat: meetingPointLat === '' ? null : Number(meetingPointLat),
-      meeting_point_lng: meetingPointLng === '' ? null : Number(meetingPointLng),
+      meeting_point_lat: latRaw ? Number(latRaw) : null,
+      meeting_point_lng: lngRaw ? Number(lngRaw) : null,
       media_urls: ordered,
       is_active: isActive,
     };
@@ -537,21 +615,31 @@ export function AdminPackagesPage() {
                   <label className="block text-sm font-medium text-gray-700">Meeting point lat</label>
                   <input
                     value={meetingPointLat}
-                    onChange={(e) => setMeetingPointLat(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    onChange={(e) => onChangeMeetingPointLat(e.target.value)}
+                    className={
+                      meetingPointLatError
+                        ? 'mt-1 w-full rounded-md border border-red-300 px-3 py-2'
+                        : 'mt-1 w-full rounded-md border px-3 py-2'
+                    }
                     type="number"
                     step="any"
                   />
+                  {meetingPointLatError && <div className="mt-1 text-xs text-red-700">{meetingPointLatError}</div>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Meeting point lng</label>
                   <input
                     value={meetingPointLng}
-                    onChange={(e) => setMeetingPointLng(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    onChange={(e) => onChangeMeetingPointLng(e.target.value)}
+                    className={
+                      meetingPointLngError
+                        ? 'mt-1 w-full rounded-md border border-red-300 px-3 py-2'
+                        : 'mt-1 w-full rounded-md border px-3 py-2'
+                    }
                     type="number"
                     step="any"
                   />
+                  {meetingPointLngError && <div className="mt-1 text-xs text-red-700">{meetingPointLngError}</div>}
                 </div>
               </div>
 
