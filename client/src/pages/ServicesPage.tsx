@@ -93,9 +93,9 @@ export function ServicesPage() {
         {loading && <div className="text-gray-600">Loading…</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {services.map((s) => (
+          {services.map((s, idx) => (
             <div
-              key={s.id || s.title || Math.random()}
+              key={s.id || s.title || idx}
               className="rounded-2xl border bg-white shadow-sm overflow-hidden"
             >
               <div className="p-6 bg-gradient-to-br from-gray-50 to-white">
