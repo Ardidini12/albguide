@@ -38,8 +38,9 @@ export function AdminSiteContentPage() {
   };
 
   useEffect(() => {
+    if (!token) return;
     load();
-  }, []);
+  }, [token]);
 
   const onSave = async () => {
     setError(null);
