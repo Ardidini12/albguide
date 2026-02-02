@@ -8,6 +8,7 @@ import { packageRouter } from './packageRoutes.js';
 import { reviewRouter } from './reviewRoutes.js';
 import { uploadRouter } from './uploadRoutes.js';
 import { userRouter } from './userRoutes.js';
+import { siteContentRouter } from './siteContentRoutes.js';
 
 export function mountRoutes(app) {
   app.use(healthRouter);
@@ -20,4 +21,5 @@ export function mountRoutes(app) {
   app.use(reviewRouter);
   app.use(uploadRouter);
   app.use(userRouter);
+  app.use(siteContentRouter);
 }

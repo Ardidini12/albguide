@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
@@ -20,9 +22,26 @@ export function Footer() {
           <div>
             <h3 className="text-white mb-3">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li>Vacation Packages</li>
-              <li>Destinations</li>
-              <li>Customer Reviews</li>
+              <li>
+                <Link className="hover:text-white" to="/packages">
+                  Vacation Packages
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white" to="/destinations">
+                  Destinations
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white" to="/services">
+                  Services
+                </Link>
+              </li>
+              <li>
+                <Link className="hover:text-white" to="/support">
+                  Support
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -31,6 +50,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>Group Travel</li>
               <li>Business Travel</li>
+              <li>Airport Pickup (Tirana Airport)</li>
             </ul>
           </div>
 
@@ -38,7 +58,58 @@ export function Footer() {
             <h3 className="text-white mb-3">Contact</h3>
             <ul className="space-y-2 text-sm">
               <li>Tirana, Albania</li>
-              <li>info@discoveralbania.com</li>
+              <li>
+                <Link className="hover:text-white" to="/contact">
+                  Contact us
+                </Link>
+              </li>
+              <li>
+                <a className="hover:text-white" href="mailto:support@discoveralbania.com">
+                  support@discoveralbania.com
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-2">
+            <h3 className="text-white mb-3">Legal & Help</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              <Link className="hover:text-white" to="/terms">
+                Terms of Use
+              </Link>
+              <Link className="hover:text-white" to="/privacy">
+                Privacy and Cookies Statement
+              </Link>
+              <Link className="hover:text-white" to="/cookie-consent">
+                Cookie consent
+              </Link>
+              <Link className="hover:text-white" to="/sitemap">
+                Site Map
+              </Link>
+              <Link className="hover:text-white" to="/how-it-works">
+                How the site works
+              </Link>
+              <Link className="hover:text-white" to="/contact">
+                Contact us
+              </Link>
+              <Link className="hover:text-white" to="/accessibility">
+                Accessibility Statement
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-white mb-3">Get in touch</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a className="hover:text-white" href="mailto:support@discoveralbania.com">
+                  Support email
+                </a>
+              </li>
+              <li>Support phone</li>
+              <li>WhatsApp</li>
             </ul>
           </div>
         </div>

@@ -34,6 +34,66 @@ export async function ensureSchema() {
       created_at timestamptz not null default now()
     );
 
+    create table if not exists public.site_content (
+      key text primary key,
+      value jsonb not null default '{}'::jsonb,
+      updated_at timestamptz not null default now()
+    );
+
+    insert into public.site_content (key, value)
+    values (
+      'services_support',
+      '{
+        "services": [
+          {
+            "id": "group_travel",
+            "title": "Group Travel",
+            "subtitle": "Families, friends, and small groups",
+            "description": "Private and semi-private itineraries across Albania, built around your pace and interests.",
+            "highlights": [
+              "Custom itinerary planning",
+              "Trusted local partners",
+              "Flexible stops & schedules"
+            ]
+          },
+          {
+            "id": "business_travel",
+            "title": "Business Travel",
+            "subtitle": "Reliable, punctual, and professional",
+            "description": "Airport-to-meeting transfers, day planning, and support for business visitors.",
+            "highlights": [
+              "On-time pickups",
+              "Comfortable vehicles",
+              "Assistance with logistics"
+            ]
+          },
+          {
+            "id": "airport_pickup",
+            "title": "Airport Pickup",
+            "subtitle": "Tirana International Airport (TIA) only",
+            "description": "Direct pickup from Tirana Airport with clear instructions and a smooth handoff.",
+            "highlights": [
+              "Meet & greet",
+              "Fixed pickup point",
+              "Easy WhatsApp coordination"
+            ]
+          }
+        ],
+        "support": {
+          "email": "support@discoveralbania.com",
+          "phone": "+355",
+          "whatsapp": "+355"
+        },
+        "safety_rules": [
+          "Never share payment details or sensitive personal information over chat.",
+          "Only use official contact channels shown on this page.",
+          "For emergencies, contact local authorities first.",
+          "Confirm pickup details (date/time/location) before the trip."
+        ]
+      }'::jsonb
+    )
+    on conflict (key) do nothing;
+
     create table if not exists public.destinations (
       id uuid primary key default gen_random_uuid(),
       name text not null,
@@ -270,6 +330,7 @@ export async function ensureSchema() {
       alter table public.favorites enable row level security;
       alter table public.reviews enable row level security;
       alter table public.review_images enable row level security;
+      alter table public.site_content enable row level security;
 
       do $$
       begin
@@ -410,6 +471,18 @@ export async function ensureSchema() {
           select 1 from pg_policies where schemaname='public' and tablename='review_images' and policyname='review_images_admin_all'
         ) then
           execute 'create policy review_images_admin_all on public.review_images for all using (public.request_is_admin()) with check (public.request_is_admin())';
+        end if;
+
+        if not exists (
+          select 1 from pg_policies where schemaname='public' and tablename='site_content' and policyname='site_content_public_read'
+        ) then
+          execute 'create policy site_content_public_read on public.site_content for select using (true)';
+        end if;
+
+        if not exists (
+          select 1 from pg_policies where schemaname='public' and tablename='site_content' and policyname='site_content_admin_all'
+        ) then
+          execute 'create policy site_content_admin_all on public.site_content for all using (public.request_is_admin()) with check (public.request_is_admin())';
         end if;
       end
       $$;
