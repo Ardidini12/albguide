@@ -42,9 +42,9 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-1">
             <NavItem to="/" label="Home" />
             <NavItem to="/packages" label="Packages" />
-            <NavItem to="/" label="Services" />
+            <NavItem to="/services" label="Services" />
             <NavItem to="/destinations" label="Destinations" />
-            <NavItem to="/" label="Support" />
+            <NavItem to="/support" label="Support" />
 
             {user && !user.isAdmin && (
               <>

@@ -7,6 +7,7 @@ import { AdminDestinationsPage } from './pages/AdminDestinationsPage'
 import { AdminPackageAvailabilityPage } from './pages/AdminPackageAvailabilityPage'
 import { AdminPackagesPage } from './pages/AdminPackagesPage'
 import { AdminReviewsPage } from './pages/AdminReviewsPage'
+import { AdminSiteContentPage } from './pages/AdminSiteContentPage'
 import { DestinationsDetailsPage } from './pages/DestinationsDetailsPage'
 import { DestinationsPage } from './pages/DestinationsPage'
 import { HomePage } from './pages/HomePage'
@@ -14,6 +15,9 @@ import { LoginPage } from './pages/LoginPage'
 import { PackageDetailsPage } from './pages/PackageDetailsPage'
 import { PackagesPage } from './pages/PackagesPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ServicesPage } from './pages/ServicesPage'
+import { SimpleInfoPage } from './pages/SimpleInfoPage'
+import { SupportPage } from './pages/SupportPage'
 import { UserDashboard } from './pages/UserDashboard'
 import { UserBookingsPage } from './pages/UserBookingsPage'
 import { UserFavoritesPage } from './pages/UserFavoritesPage'
@@ -27,6 +31,16 @@ export default function App() {
         <Route path="/packages/:slug" element={<PackageDetailsPage />} />
         <Route path="/destinations" element={<DestinationsPage />} />
         <Route path="/destinations/:slug" element={<DestinationsDetailsPage />} />
+        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/support" element={<SupportPage />} />
+
+        <Route path="/terms" element={<SimpleInfoPage title="Terms of Use" />} />
+        <Route path="/privacy" element={<SimpleInfoPage title="Privacy and Cookies Statement" />} />
+        <Route path="/cookie-consent" element={<SimpleInfoPage title="Cookie Consent" />} />
+        <Route path="/sitemap" element={<SimpleInfoPage title="Site Map" />} />
+        <Route path="/how-it-works" element={<SimpleInfoPage title="How the site works" />} />
+        <Route path="/contact" element={<SimpleInfoPage title="Contact us" />} />
+        <Route path="/accessibility" element={<SimpleInfoPage title="Accessibility Statement" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -62,6 +76,15 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminDashboard />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/site-content"
+          element={
+            <RequireAdmin>
+              <AdminSiteContentPage />
             </RequireAdmin>
           }
         />

@@ -55,6 +55,12 @@ export function AdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Link
+                to="/admin/site-content"
+                className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
+              >
+                Site Content
+              </Link>
+              <Link
                 to="/admin/destinations"
                 className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
               >
