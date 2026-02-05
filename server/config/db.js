@@ -49,7 +49,7 @@ export async function ensureSchema() {
             "id": "group_travel",
             "title": "Group Travel",
             "subtitle": "Families, friends, and small groups",
-            "description": "Private and semi-private itineraries across Albania, built around your pace and interests.",
+            "description": "Private itineraries across Albania, built around your pace and interests.",
             "highlights": [
               "Custom itinerary planning",
               "Trusted local partners",
@@ -70,7 +70,7 @@ export async function ensureSchema() {
           {
             "id": "airport_pickup",
             "title": "Airport Pickup",
-            "subtitle": "Tirana International Airport (TIA) only",
+            "subtitle": "Tirana International Airport (TIA)",
             "description": "Direct pickup from Tirana Airport with clear instructions and a smooth handoff.",
             "highlights": [
               "Meet & greet",

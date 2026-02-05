@@ -7,7 +7,8 @@ import { AdminDestinationsPage } from './pages/AdminDestinationsPage'
 import { AdminPackageAvailabilityPage } from './pages/AdminPackageAvailabilityPage'
 import { AdminPackagesPage } from './pages/AdminPackagesPage'
 import { AdminReviewsPage } from './pages/AdminReviewsPage'
-import { AdminSiteContentPage } from './pages/AdminSiteContentPage'
+import { AdminServicesPage } from './pages/AdminServicesPage'
+import { AdminSupportPage } from './pages/AdminSupportPage'
 import { DestinationsDetailsPage } from './pages/DestinationsDetailsPage'
 import { DestinationsPage } from './pages/DestinationsPage'
 import { HomePage } from './pages/HomePage'
@@ -81,10 +82,19 @@ export default function App() {
         />
 
         <Route
-          path="/admin/site-content"
+          path="/admin/services"
           element={
             <RequireAdmin>
-              <AdminSiteContentPage />
+              <AdminServicesPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/support"
+          element={
+            <RequireAdmin>
+              <AdminSupportPage />
             </RequireAdmin>
           }
         />
