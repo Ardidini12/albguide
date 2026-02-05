@@ -50,9 +50,9 @@ export async function updateSupportContent(payload, { requestUser } = {}) {
   const content = await getServicesSupportContent() || {};
   const nextValue = {
     ...content,
-    support: payload.support || {},
-    safety_rules: payload.safety_rules || []
   };
+  if (payload.support !== undefined) nextValue.support = payload.support;
+  if (payload.safety_rules !== undefined) nextValue.safety_rules = payload.safety_rules;
   const row = await upsertSiteContentByKey(SERVICES_SUPPORT_KEY, nextValue, { requestUser });
   return {
     support: row?.value?.support || {},

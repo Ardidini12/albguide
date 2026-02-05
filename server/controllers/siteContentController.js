@@ -37,7 +37,10 @@ export async function getServices(req, res) {
 
 export async function updateServices(req, res) {
   try {
-    const services = await updateServicesContent(req.body?.services || [], { requestUser: req.user });
+    if (!req.body.services || !Array.isArray(req.body.services)) {
+      return res.status(400).json({ message: 'Services array is required' });
+    }
+    const services = await updateServicesContent(req.body.services, { requestUser: req.user });
     return res.json({ services });
   } catch (err) {
     if (err?.statusCode) {
