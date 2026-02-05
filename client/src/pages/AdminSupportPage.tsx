@@ -126,8 +126,9 @@ export function AdminSupportPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Support Email</label>
+                <label htmlFor="support-email" className="block text-sm font-medium text-gray-700">Support Email</label>
                 <input
+                  id="support-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -137,8 +138,9 @@ export function AdminSupportPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Support Phone</label>
+                <label htmlFor="support-phone" className="block text-sm font-medium text-gray-700">Support Phone</label>
                 <input
+                  id="support-phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -149,8 +151,9 @@ export function AdminSupportPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">WhatsApp</label>
+                <label htmlFor="support-whatsapp" className="block text-sm font-medium text-gray-700">WhatsApp</label>
                 <input
+                  id="support-whatsapp"
                   type="tel"
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
