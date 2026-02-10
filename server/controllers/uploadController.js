@@ -54,3 +54,25 @@ export async function createReadUrl(req, res) {
 
   return res.json({ signedUrl });
 }
+
+export async function deleteMedia(req, res) {
+  const path = String(req.body?.path || '');
+  if (!path) {
+    return res.status(400).json({ message: 'path is required' });
+  }
+
+  const bucket = getSupabaseBucket();
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+
+  if (error) {
+    console.error('Delete error:', error);
+    return res.status(500).json({
+      message: 'Unable to delete file',
+      details: error?.message || String(error || ''),
+    });
+  }
+
+  return res.json({ success: true, path });
+}

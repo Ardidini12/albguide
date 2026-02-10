@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { apiFetch, authHeader } from '../services/api';
@@ -152,6 +152,8 @@ export function AdminPackagesPage() {
   const [mediaItems, setMediaItems] = useState<Array<{ path: string; url: string }>>([]);
   const [primaryPath, setPrimaryPath] = useState<string>('');
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const resetForm = () => {
     setEditingId(null);
     setDestinationId('');
@@ -270,6 +272,18 @@ export function AdminPackagesPage() {
     }
   };
 
+  const deleteFromStorage = async (path: string) => {
+    try {
+      await apiFetch('/admin/uploads', {
+        method: 'DELETE',
+        headers: authHeader(token),
+        body: JSON.stringify({ path }),
+      });
+    } catch (err) {
+      console.error('Failed to delete from storage:', err);
+    }
+  };
+
   const onUpload = async (files: File[]) => {
     setError(null);
 
@@ -316,6 +330,10 @@ export function AdminPackagesPage() {
         nextPrimary = path;
         setPrimaryPath(path);
       }
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -649,6 +667,7 @@ export function AdminPackagesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Media (Image/Video)</label>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*,video/*"
                   className="mt-1 w-full text-sm"
@@ -663,14 +682,33 @@ export function AdminPackagesPage() {
                 {mediaItems.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {mediaItems.map((m) => (
-                      <button
-                        key={m.path}
-                        type="button"
-                        onClick={() => setPrimaryPath(m.path)}
-                        className={m.path === primaryPath ? 'rounded-lg overflow-hidden border-2 border-red-700 bg-gray-50' : 'rounded-lg overflow-hidden border bg-gray-50 hover:border-gray-300'}
-                      >
-                        {isVideoUrl(m.url) ? <video src={m.url} className="w-full h-20 object-cover" /> : <img src={m.url} alt="" className="w-full h-20 object-cover" />}
-                      </button>
+                      <div key={m.path} className="relative group">
+                        <button
+                          type="button"
+                          onClick={() => setPrimaryPath(m.path)}
+                          className={m.path === primaryPath ? 'rounded-lg overflow-hidden border-2 border-red-700 bg-gray-50 w-full' : 'rounded-lg overflow-hidden border bg-gray-50 hover:border-gray-300 w-full'}
+                        >
+                          {isVideoUrl(m.url) ? <video src={m.url} className="w-full h-20 object-cover" /> : <img src={m.url} alt="" className="w-full h-20 object-cover" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await deleteFromStorage(m.path);
+                            setMediaItems((prev) => prev.filter((item) => item.path !== m.path));
+                            if (primaryPath === m.path) {
+                              const remaining = mediaItems.filter((item) => item.path !== m.path);
+                              setPrimaryPath(remaining.length > 0 ? remaining[0].path : '');
+                            }
+                          }}
+                          className="absolute top-1 right-1 bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove media"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
