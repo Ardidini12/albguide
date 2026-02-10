@@ -59,14 +59,9 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>Tirana, Albania</li>
               <li>
-                <Link className="hover:text-white" to="/contact">
+                <Link className="hover:text-white" to="/support">
                   Contact us
                 </Link>
-              </li>
-              <li>
-                <a className="hover:text-white" href="mailto:support@discoveralbania.com">
-                  support@discoveralbania.com
-                </a>
               </li>
             </ul>
           </div>
@@ -82,35 +77,10 @@ export function Footer() {
               <Link className="hover:text-white" to="/privacy">
                 Privacy and Cookies Statement
               </Link>
-              <Link className="hover:text-white" to="/cookie-consent">
-                Cookie consent
-              </Link>
               <Link className="hover:text-white" to="/sitemap">
                 Site Map
               </Link>
-              <Link className="hover:text-white" to="/how-it-works">
-                How the site works
-              </Link>
-              <Link className="hover:text-white" to="/contact">
-                Contact us
-              </Link>
-              <Link className="hover:text-white" to="/accessibility">
-                Accessibility Statement
-              </Link>
             </div>
-          </div>
-
-          <div>
-            <h3 className="text-white mb-3">Get in touch</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a className="hover:text-white" href="mailto:support@discoveralbania.com">
-                  Support email
-                </a>
-              </li>
-              <li>Support phone</li>
-              <li>WhatsApp</li>
-            </ul>
           </div>
         </div>
 

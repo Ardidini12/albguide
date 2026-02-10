@@ -5,6 +5,11 @@ import {
   getUserMe,
   getUsers,
   updateUser,
+  updateUserMe,
+  changePassword,
+  signProfilePictureUpload,
+  registerProfilePicture,
+  deleteProfilePicture,
 } from '../services/userService.js';
 
 export async function getMe(req, res) {
@@ -86,6 +91,88 @@ export async function remove(req, res) {
     if (!deletedId) return res.status(404).json({ message: 'User not found' });
     return res.json({ deletedId });
   } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function updateMe(req, res) {
+  const { name } = req.body || {};
+
+  try {
+    const updated = await updateUserMe(req.user.sub, { name });
+    if (!updated) return res.status(404).json({ message: 'User not found' });
+    return res.json({ user: updated });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function updatePassword(req, res) {
+  const { currentPassword, newPassword } = req.body || {};
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'currentPassword and newPassword are required' });
+  }
+
+  try {
+    const updated = await changePassword(req.user.sub, currentPassword, newPassword);
+    if (!updated) return res.status(404).json({ message: 'User not found' });
+    return res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    if (err?.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message || 'Bad request' });
+    }
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function signProfilePicture(req, res) {
+  try {
+    const result = await signProfilePictureUpload({
+      userId: req.user.sub,
+      contentType: req.body?.contentType,
+      fileSize: req.body?.fileSize,
+    });
+
+    return res.status(201).json(result);
+  } catch (err) {
+    if (err?.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message || 'Bad request' });
+    }
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function createProfilePicture(req, res) {
+  try {
+    const user = await registerProfilePicture({
+      userId: req.user.sub,
+      path: req.body?.path,
+    });
+
+    return res.status(201).json({ user });
+  } catch (err) {
+    if (err?.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message || 'Bad request' });
+    }
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function removeProfilePicture(req, res) {
+  try {
+    const user = await deleteProfilePicture(req.user.sub);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json({ user, message: 'Profile picture removed successfully' });
+  } catch (err) {
+    if (err?.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message || 'Bad request' });
+    }
     console.error(err);
     return res.status(500).json({ message: 'Internal server error' });
   }

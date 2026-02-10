@@ -2,7 +2,7 @@ import { pool } from '../config/db.js';
 
 export async function createUser({ email, passwordHash, name, isAdmin }) {
   const created = await pool.query(
-    'insert into public.users (email, password_hash, name, is_admin) values ($1, $2, $3, $4) returning id, email, name, is_admin, created_at',
+    'insert into public.users (email, password_hash, name, is_admin) values ($1, $2, $3, $4) returning id, email, name, profile_picture, is_admin, created_at',
     [String(email).toLowerCase(), passwordHash, name || null, Boolean(isAdmin)]
   );
   return created.rows[0];
@@ -10,7 +10,7 @@ export async function createUser({ email, passwordHash, name, isAdmin }) {
 
 export async function findUserByEmailWithPassword(email) {
   const result = await pool.query(
-    'select id, email, password_hash, name, is_admin, created_at from public.users where email=$1',
+    'select id, email, password_hash, name, profile_picture, is_admin, created_at from public.users where email=$1',
     [String(email).toLowerCase()]
   );
   return result.rows[0] || null;
@@ -18,7 +18,7 @@ export async function findUserByEmailWithPassword(email) {
 
 export async function findUserById(id) {
   const result = await pool.query(
-    'select id, email, name, is_admin, created_at from public.users where id=$1',
+    'select id, email, name, profile_picture, is_admin, created_at from public.users where id=$1',
     [id]
   );
   return result.rows[0] || null;
@@ -26,7 +26,7 @@ export async function findUserById(id) {
 
 export async function listUsers() {
   const result = await pool.query(
-    'select id, email, name, is_admin, created_at from public.users order by created_at desc'
+    'select id, email, name, profile_picture, is_admin, created_at from public.users order by created_at desc'
   );
   return result.rows;
 }
@@ -68,7 +68,7 @@ export async function updateUserById(id, { email, name, passwordHash, isAdmin })
   values.push(id);
 
   const result = await pool.query(
-    `update public.users set ${fields.join(', ')} where id=$${i} returning id, email, name, is_admin, created_at`,
+    `update public.users set ${fields.join(', ')} where id=$${i} returning id, email, name, profile_picture, is_admin, created_at`,
     values
   );
 
@@ -77,8 +77,16 @@ export async function updateUserById(id, { email, name, passwordHash, isAdmin })
 
 export async function ensureAdminByEmail(email) {
   const result = await pool.query(
-    'update public.users set is_admin=true where email=$1 returning id, email, name, is_admin, created_at',
+    'update public.users set is_admin=true where email=$1 returning id, email, name, profile_picture, is_admin, created_at',
     [String(email).toLowerCase()]
+  );
+  return result.rows[0] || null;
+}
+
+export async function updateUserProfilePicture(userId, profilePictureUrl) {
+  const result = await pool.query(
+    'update public.users set profile_picture=$1 where id=$2 returning id, email, name, profile_picture, is_admin, created_at',
+    [profilePictureUrl, userId]
   );
   return result.rows[0] || null;
 }

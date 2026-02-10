@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { AvailabilityCalendar, countAvailableDays } from '../components/AvailabilityCalendar';
+import { format } from 'date-fns';
 
 type PackageRow = {
   id: string;
@@ -30,12 +32,14 @@ type PackageRow = {
   destination_is_active?: boolean;
 };
 
-type AvailabilityRow = {
+type AvailabilityRule = {
   id: string;
   package_id: string;
-  available_date: string;
-  capacity: number;
-  remaining: number;
+  availability_type: 'always' | 'date_range' | 'specific_dates' | 'always_except';
+  start_date?: string | null;
+  end_date?: string | null;
+  excluded_weekdays?: number[];
+  specific_dates?: string[];
   is_open: boolean;
 };
 
@@ -51,7 +55,7 @@ type ReviewRow = {
   created_at: string;
   user_name?: string | null;
   user_email?: string;
-  images?: Array<{ url: string; path: string; created_at: string }>;
+  images?: Array<{ url: string; path: string; file_type: string; file_size: number; created_at: string }>;
 };
 
 function isVideoUrl(url: string) {
@@ -71,8 +75,9 @@ export function PackageDetailsPage() {
   const { token, user } = useAuth();
 
   const [pkg, setPkg] = useState<PackageRow | null>(null);
-  const [availability, setAvailability] = useState<AvailabilityRow[]>([]);
+  const [availability, setAvailability] = useState<AvailabilityRule | null>(null);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [dateRange, setDateRange] = useState<{ from: Date; to?: Date } | undefined>();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,12 +87,11 @@ export function PackageDetailsPage() {
 
   const [favorite, setFavorite] = useState<boolean | null>(null);
 
-  const [date, setDate] = useState('');
   const [fullName, setFullName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
+  const [adults, setAdults] = useState<number | ''>('');
+  const [children, setChildren] = useState<number | ''>('');
+  const [infants, setInfants] = useState<number | ''>('');
   const [note, setNote] = useState('');
   const [bookingMsg, setBookingMsg] = useState<string | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -118,7 +122,7 @@ export function PackageDetailsPage() {
         apiFetch(`/packages/${encodeURIComponent(next.id)}/reviews`),
       ]);
 
-      setAvailability(a.availability || []);
+      setAvailability(a.availability);
       setReviews(r.reviews || []);
 
       if (token) {
@@ -175,12 +179,13 @@ export function PackageDetailsPage() {
         },
         body: JSON.stringify({
           package_id: pkg.id,
-          date,
+          date: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '',
+          end_date: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
           full_name: fullName,
           whatsapp_number: whatsapp,
-          adults,
-          children,
-          infants,
+          adults: adults === '' ? 0 : adults,
+          children: children === '' ? 0 : children,
+          infants: infants === '' ? 0 : infants,
           note: note || undefined,
         }),
       });
@@ -402,14 +407,24 @@ export function PackageDetailsPage() {
 
                       {Array.isArray(r.images) && r.images.length > 0 && (
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {r.images.map((img) => (
-                            <img
-                              key={img.path}
-                              src={img.url}
-                              alt=""
-                              className="h-24 w-full object-cover rounded-lg border"
-                              loading="lazy"
-                            />
+                          {r.images.map((media) => (
+                            media.file_type === 'video' ? (
+                              <video
+                                key={media.path}
+                                src={media.url}
+                                controls
+                                className="h-24 w-full object-cover rounded-lg border bg-black"
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img
+                                key={media.path}
+                                src={media.url}
+                                alt=""
+                                className="h-24 w-full object-cover rounded-lg border"
+                                loading="lazy"
+                              />
+                            )
                           ))}
                         </div>
                       )}
@@ -422,30 +437,36 @@ export function PackageDetailsPage() {
 
           <div className="lg:col-span-1">
             <div className="rounded-2xl border bg-white p-6">
-              <div className="text-lg font-semibold text-gray-900">Available dates</div>
-              <div className="mt-3 space-y-2">
-                {availability.length === 0 ? (
-                  <div className="text-sm text-gray-600">No availability published.</div>
-                ) : (
-                  availability.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => setDate(a.available_date)}
-                      className={
-                        a.available_date === date
-                          ? 'w-full text-left rounded-lg border px-3 py-2 bg-red-50 border-red-200'
-                          : 'w-full text-left rounded-lg border px-3 py-2 hover:bg-gray-50'
-                      }
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-gray-900">{a.available_date}</div>
-                        <div className="text-xs text-gray-600">{a.remaining} left</div>
+              <div className="text-lg font-semibold text-gray-900 mb-4">Check Availability</div>
+              {!availability || !availability.is_open ? (
+                <div className="text-sm text-gray-600">No availability published.</div>
+              ) : (
+                <div>
+                  <AvailabilityCalendar
+                    availability={availability}
+                    mode="range"
+                    selectedDates={dateRange}
+                    onDateSelect={(range) => setDateRange(range as { from: Date; to?: Date } | undefined)}
+                    showInstructions={true}
+                  />
+                  {dateRange?.from && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-700">
+                        {dateRange.to ? (
+                          <>
+                            <strong>Selected:</strong> {format(dateRange.from, 'MMM dd, yyyy')} - {format(dateRange.to, 'MMM dd, yyyy')}
+                            <span className="ml-2 text-gray-600">
+                              ({countAvailableDays(availability, dateRange.from, dateRange.to)} available day{countAvailableDays(availability, dateRange.from, dateRange.to) !== 1 ? 's' : ''})
+                            </span>
+                          </>
+                        ) : (
+                          <><strong>Start date:</strong> {format(dateRange.from, 'MMM dd, yyyy')} <span className="text-gray-600">(Click end date)</span></>
+                        )}
                       </div>
-                    </button>
-                  ))
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <form onSubmit={submitBooking} className="mt-6 space-y-3">
                 <div className="text-lg font-semibold text-gray-900">Book</div>
@@ -457,12 +478,12 @@ export function PackageDetailsPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Date *</label>
+                  <label className="block text-sm font-medium text-gray-700">Booking Date(s) *</label>
                   <input
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="mt-1 w-full rounded-md border px-3 py-2"
-                    placeholder="YYYY-MM-DD"
+                    value={dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'yyyy-MM-dd')} to ${format(dateRange.to, 'yyyy-MM-dd')}` : format(dateRange.from, 'yyyy-MM-dd')) : ''}
+                    readOnly
+                    className="mt-1 w-full rounded-md border px-3 py-2 bg-gray-50"
+                    placeholder="Select dates from calendar above"
                     required
                   />
                 </div>
@@ -478,7 +499,7 @@ export function PackageDetailsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">WhatsApp (E.164) *</label>
+                  <label className="block text-sm font-medium text-gray-700">WhatsApp (with country code) *</label>
                   <input
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
@@ -493,7 +514,7 @@ export function PackageDetailsPage() {
                     <label className="block text-sm font-medium text-gray-700">Adults</label>
                     <input
                       value={adults}
-                      onChange={(e) => setAdults(Number(e.target.value))}
+                      onChange={(e) => setAdults(e.target.value === '' ? '' : Number(e.target.value))}
                       className="mt-1 w-full rounded-md border px-3 py-2"
                       type="number"
                       min={0}
@@ -503,7 +524,7 @@ export function PackageDetailsPage() {
                     <label className="block text-sm font-medium text-gray-700">Children</label>
                     <input
                       value={children}
-                      onChange={(e) => setChildren(Number(e.target.value))}
+                      onChange={(e) => setChildren(e.target.value === '' ? '' : Number(e.target.value))}
                       className="mt-1 w-full rounded-md border px-3 py-2"
                       type="number"
                       min={0}
@@ -513,7 +534,7 @@ export function PackageDetailsPage() {
                     <label className="block text-sm font-medium text-gray-700">Infants</label>
                     <input
                       value={infants}
-                      onChange={(e) => setInfants(Number(e.target.value))}
+                      onChange={(e) => setInfants(e.target.value === '' ? '' : Number(e.target.value))}
                       className="mt-1 w-full rounded-md border px-3 py-2"
                       type="number"
                       min={0}
@@ -532,11 +553,11 @@ export function PackageDetailsPage() {
                 </div>
 
                 <button
-                  disabled={bookingLoading}
+                  disabled={bookingLoading || ((adults === '' || adults === 0) && (children === '' || children === 0) && (infants === '' || infants === 0))}
                   className="w-full rounded-md bg-red-700 text-white py-2 text-sm font-medium hover:bg-red-600 disabled:opacity-50"
                   type="submit"
                 >
-                  {bookingLoading ? 'Creating…' : 'Book on WhatsApp'}
+                  {bookingLoading ? 'Creating…' : 'Request Booking'}
                 </button>
               </form>
             </div>

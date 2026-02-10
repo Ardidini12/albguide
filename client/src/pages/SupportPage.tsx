@@ -12,9 +12,9 @@ type ServicesSupportContent = {
 
 const fallbackContent: ServicesSupportContent = {
   support: {
-    email: 'support@discoveralbania.com',
-    phone: '+355',
-    whatsapp: '+355',
+    email: '',
+    phone: '',
+    whatsapp: '',
   },
   safety_rules: [
     'Never share payment details or sensitive personal information over chat.',
@@ -26,6 +26,14 @@ const fallbackContent: ServicesSupportContent = {
 
 function normalizePhone(raw: string | undefined) {
   return String(raw || '').replace(/\s+/g, '').trim();
+}
+
+function normalizeEmail(raw: string | undefined) {
+  const s = String(raw || '').trim();
+  const m = s.match(/<([^>]+)>/);
+  const candidate = (m?.[1] || s).trim();
+  const cleaned = candidate.replace(/^mailto:/i, '').replace(/\s+/g, '');
+  return cleaned;
 }
 
 export function SupportPage() {
@@ -59,6 +67,7 @@ export function SupportPage() {
   const phone = content.support?.phone || '';
   const whatsapp = content.support?.whatsapp || '';
 
+  const emailClean = useMemo(() => normalizeEmail(email), [email]);
   const phoneClean = useMemo(() => normalizePhone(phone), [phone]);
   const whatsappClean = useMemo(() => normalizePhone(whatsapp), [whatsapp]);
 
@@ -86,9 +95,12 @@ export function SupportPage() {
           <div className="rounded-2xl border bg-white shadow-sm p-6">
             <div className="text-sm text-gray-500">Support Email</div>
             <div className="mt-1 text-lg font-semibold text-gray-900 break-words">
-              {email ? (
-                <a className="text-red-700 hover:underline" href={`mailto:${email}`}>
-                  {email}
+              {emailClean ? (
+                <a
+                  className="text-red-700 hover:underline"
+                  href={`mailto:${emailClean}`}
+                >
+                  {emailClean}
                 </a>
               ) : (
                 '—'
@@ -134,7 +146,7 @@ export function SupportPage() {
         <div className="mt-8 rounded-2xl border bg-white shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b bg-gradient-to-br from-gray-50 to-white">
             <h2 className="text-xl font-semibold text-gray-900">Safety</h2>
-            <p className="mt-1 text-sm text-gray-600">A few simple rules to protect you and your trip.</p>
+            <p className="mt-1 text-sm text-gray-600">A few simple rules to protect you.</p>
           </div>
           <div className="p-6">
             <ul className="space-y-3 text-gray-700">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -41,14 +42,17 @@ export function AdminReviewsPage() {
     load();
   }, []);
 
-  const setStatus = async (id: string, moderationStatus: string) => {
+  const deleteReview = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+      return;
+    }
+
     setError(null);
 
     try {
       await apiFetch(`/admin/reviews/${encodeURIComponent(id)}`, {
-        method: 'PUT',
+        method: 'DELETE',
         headers: authHeader(token),
-        body: JSON.stringify({ moderation_status: moderationStatus }),
       });
       await load();
     } catch (e) {
@@ -62,6 +66,9 @@ export function AdminReviewsPage() {
         <div className="bg-white border rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
+              <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-700 mb-2">
+                ← Back to Dashboard
+              </Link>
               <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
               <p className="mt-1 text-gray-600">Moderate traveler reviews.</p>
             </div>
@@ -100,14 +107,8 @@ export function AdminReviewsPage() {
                   <div className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{r.body}</div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button onClick={() => setStatus(r.id, 'approved')} className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50" type="button">
-                      Approve
-                    </button>
-                    <button onClick={() => setStatus(r.id, 'rejected')} className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50" type="button">
-                      Reject
-                    </button>
-                    <button onClick={() => setStatus(r.id, 'pending')} className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50" type="button">
-                      Pending
+                    <button onClick={() => deleteReview(r.id)} className="px-3 py-2 rounded-md bg-red-700 text-white text-sm hover:bg-red-600" type="button">
+                      Delete Review
                     </button>
                   </div>
                 </div>

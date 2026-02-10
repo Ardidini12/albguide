@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
@@ -242,6 +243,9 @@ export function AdminDestinationsPage() {
       <div className="max-w-6xl mx-auto px-4 py-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
+            <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-700 mb-2">
+              ← Back to Dashboard
+            </Link>
             <h1 className="text-2xl font-bold text-gray-900">Destinations</h1>
             <p className="mt-1 text-gray-600">
               Manage destinations. Total: {summary.total}. Active: {summary.active}.

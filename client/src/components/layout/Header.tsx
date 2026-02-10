@@ -1,5 +1,8 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useState, useRef, useEffect } from 'react';
+import { apiFetch, authHeader } from '../../services/api';
+import { profilePictureEvents } from '../../utils/profilePictureEvents';
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -18,11 +21,53 @@ function NavItem({ to, label }: { to: string; label: string }) {
 
 export function Header() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      if (!user || !token) {
+        setProfilePicture(null);
+        return;
+      }
+
+      try {
+        const data = await apiFetch('/users/me', { headers: authHeader(token) });
+        setProfilePicture(data.user?.profile_picture || null);
+      } catch (e) {
+        console.error('Failed to fetch profile picture:', e);
+      }
+    };
+
+    fetchProfilePicture();
+  }, [user, token]);
+
+  useEffect(() => {
+    // Listen for profile picture change events
+    const unsubscribe = profilePictureEvents.subscribe((newProfilePicture) => {
+      setProfilePicture(newProfilePicture);
+    });
+
+    return unsubscribe;
+  }, []);
 
   const onLogout = () => {
     logout();
     navigate('/');
+    setShowDropdown(false);
   };
 
   return (
@@ -46,13 +91,6 @@ export function Header() {
             <NavItem to="/destinations" label="Destinations" />
             <NavItem to="/support" label="Support" />
 
-            {user && !user.isAdmin && (
-              <>
-                <NavItem to="/user/bookings" label="My Bookings" />
-                <NavItem to="/user/favorites" label="My Favorites" />
-              </>
-            )}
-
             {/* {user?.isAdmin && (
               <>
                 <NavItem to="/admin/packages" label="Admin Packages" />
@@ -64,32 +102,116 @@ export function Header() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                {user.isAdmin ? (
-                  <Link
-                    to="/admin"
-                    className="hidden sm:inline-flex px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="w-9 h-9 rounded-full bg-gray-100 border flex items-center justify-center text-sm font-semibold text-gray-800 hover:bg-gray-200 transition-colors overflow-hidden"
                   >
-                    Admin
-                  </Link>
-                ) : (
-                  <Link
-                    to="/user"
-                    className="hidden sm:inline-flex px-3 py-2 rounded-md border text-sm hover:bg-gray-50"
-                  >
-                    Dashboard
-                  </Link>
-                )}
+                    {profilePicture ? (
+                      <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      user.email.slice(0, 1).toUpperCase()
+                    )}
+                  </button>
 
-                <div className="w-9 h-9 rounded-full bg-gray-100 border flex items-center justify-center text-sm font-semibold text-gray-800">
-                  {user.email.slice(0, 1).toUpperCase()}
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg py-1 z-50">
+                      {user.isAdmin ? (
+                        <>
+                          <Link
+                            to="/user/profile"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            My Profile
+                          </Link>
+                          <div className="border-t my-1"></div>
+                          <Link
+                            to="/admin"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Admin Dashboard
+                          </Link>
+                          <Link
+                            to="/admin/destinations"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Manage Destinations
+                          </Link>
+                          <Link
+                            to="/admin/packages"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Manage Packages
+                          </Link>
+                          <Link
+                            to="/admin/bookings"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Manage Bookings
+                          </Link>
+                          <Link
+                            to="/admin/reviews"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Manage Reviews
+                          </Link>
+                          <Link
+                            to="/admin/users"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Manage Users
+                          </Link>
+                          <div className="border-t my-1"></div>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            to="/user/profile"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            My Profile
+                          </Link>
+                          <Link
+                            to="/user/bookings"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            My Bookings
+                          </Link>
+                          <Link
+                            to="/user/favorites"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            My Favorites
+                          </Link>
+                          <Link
+                            to="/user/reviews"
+                            onClick={() => setShowDropdown(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            My Reviews
+                          </Link>
+                          <div className="border-t my-1"></div>
+                        </>
+                      )}
+                      <button
+                        onClick={onLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-50"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                <button
-                  onClick={onLogout}
-                  className="px-3 py-2 rounded-md bg-red-700 text-white text-sm hover:bg-red-600"
-                >
-                  Logout
-                </button>
               </>
             ) : (
               <>

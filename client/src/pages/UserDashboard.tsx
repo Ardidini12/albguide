@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -48,20 +49,45 @@ export function UserDashboard() {
           )}
 
           {me && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl border p-4">
-                <div className="text-sm text-gray-500">Email</div>
-                <div className="mt-1 font-semibold text-gray-900">{me.email}</div>
+            <>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border p-4">
+                  <div className="text-sm text-gray-500">Email</div>
+                  <div className="mt-1 font-semibold text-gray-900">{me.email}</div>
+                </div>
+                <div className="rounded-xl border p-4">
+                  <div className="text-sm text-gray-500">Name</div>
+                  <div className="mt-1 font-semibold text-gray-900">{me.name || '—'}</div>
+                </div>
               </div>
-              <div className="rounded-xl border p-4">
-                <div className="text-sm text-gray-500">Name</div>
-                <div className="mt-1 font-semibold text-gray-900">{me.name || '—'}</div>
+
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Link
+                    to="/user/bookings"
+                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="font-semibold text-gray-900">My Bookings</div>
+                    <div className="mt-1 text-sm text-gray-600">View and manage your bookings</div>
+                  </Link>
+                  <Link
+                    to="/user/favorites"
+                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="font-semibold text-gray-900">My Favorites</div>
+                    <div className="mt-1 text-sm text-gray-600">Saved packages</div>
+                  </Link>
+                  <Link
+                    to="/user/reviews"
+                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="font-semibold text-gray-900">My Reviews</div>
+                    <div className="mt-1 text-sm text-gray-600">Manage your reviews and media</div>
+                  </Link>
+                </div>
               </div>
-              <div className="rounded-xl border p-4">
-                <div className="text-sm text-gray-500">Role</div>
-                <div className="mt-1 font-semibold text-gray-900">{me.is_admin ? 'Admin' : 'User'}</div>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>

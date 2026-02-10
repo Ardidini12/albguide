@@ -62,7 +62,7 @@ export function PackagesPage() {
       <div className="bg-gradient-to-r from-red-700 to-red-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-4xl font-serif">Packages</h1>
-          <p className="mt-2 text-white/90 max-w-2xl">Choose a tour, check availability, and book in minutes.</p>
+          <p className="mt-2 text-white/90 max-w-2xl">Choose a tour, check availability, and book in seconds.</p>
         </div>
       </div>
 

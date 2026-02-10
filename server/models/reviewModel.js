@@ -76,3 +76,60 @@ export async function updateReviewById(id, { moderationStatus }) {
 
   return result.rows[0] || null;
 }
+
+export async function deleteReviewById(id) {
+  const result = await pool.query('delete from public.reviews where id=$1 returning id', [id]);
+  return result.rows[0]?.id || null;
+}
+
+export async function listReviewsByUser(userId) {
+  const result = await pool.query(
+    `select r.*
+     from public.reviews r
+     where r.user_id=$1
+     order by r.created_at desc`,
+    [userId]
+  );
+  return result.rows;
+}
+
+export async function updateReviewByUser(id, userId, { rating, title, body }) {
+  const fields = [];
+  const values = [];
+  let i = 1;
+
+  if (rating !== undefined) {
+    fields.push(`rating=$${i++}`);
+    values.push(rating);
+  }
+  if (title !== undefined) {
+    fields.push(`title=$${i++}`);
+    values.push(title || null);
+  }
+  if (body !== undefined) {
+    fields.push(`body=$${i++}`);
+    values.push(body);
+  }
+
+  if (!fields.length) {
+    return await findReviewById(id);
+  }
+
+  fields.push('updated_at=now()');
+  values.push(id, userId);
+
+  const result = await pool.query(
+    `update public.reviews set ${fields.join(', ')} where id=$${i} and user_id=$${i + 1} returning *`,
+    values
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function deleteReviewByUser(id, userId) {
+  const result = await pool.query(
+    'delete from public.reviews where id=$1 and user_id=$2 returning id',
+    [id, userId]
+  );
+  return result.rows[0]?.id || null;
+}
