@@ -55,7 +55,12 @@ export async function signReviewImageUpload({ reviewId, userId, contentType, fil
     throw err;
   }
 
-  if (fileType === 'video' && videoDuration !== undefined) {
+  if (fileType === 'video') {
+    if (videoDuration === undefined || videoDuration === null) {
+      const err = new Error('video_duration is required for video uploads');
+      err.statusCode = 400;
+      throw err;
+    }
     validateVideoDuration(videoDuration, 30);
   }
 

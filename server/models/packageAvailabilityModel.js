@@ -59,27 +59,32 @@ export function isDateAvailable(availabilityRule, date) {
   const { availability_type, start_date, end_date, excluded_weekdays, specific_dates } = availabilityRule;
 
   switch (availability_type) {
-    case 'always':
+    case 'always': {
       return true;
+    }
 
-    case 'date_range':
+    case 'date_range': {
       if (!start_date || !end_date) return false;
-      const start = new Date(start_date);
-      const end = new Date(end_date);
-      return checkDate >= start && checkDate <= end;
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const startStr = new Date(start_date).toISOString().split('T')[0];
+      const endStr = new Date(end_date).toISOString().split('T')[0];
+      return dateStr >= startStr && dateStr <= endStr;
+    }
 
-    case 'specific_dates':
+    case 'specific_dates': {
       if (!specific_dates || specific_dates.length === 0) return false;
       const dateStr = checkDate.toISOString().split('T')[0];
       return specific_dates.some(d => {
         const specificDateStr = new Date(d).toISOString().split('T')[0];
         return specificDateStr === dateStr;
       });
+    }
 
-    case 'always_except':
+    case 'always_except': {
       if (!excluded_weekdays || excluded_weekdays.length === 0) return true;
       const dayOfWeek = checkDate.getDay();
       return !excluded_weekdays.includes(dayOfWeek);
+    }
 
     default:
       return false;

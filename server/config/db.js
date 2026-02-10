@@ -30,6 +30,7 @@ export async function ensureSchema() {
       email text unique not null,
       password_hash text not null,
       name text,
+      profile_picture text,
       is_admin boolean not null default false,
       created_at timestamptz not null default now()
     );
@@ -112,9 +113,7 @@ export async function ensureSchema() {
 
     create index if not exists destinations_region_idx on public.destinations(region);
     create index if not exists destinations_is_featured_idx on public.destinations(is_featured);
-  `);
 
-  await pool.query(`
     create table if not exists public.packages (
       id uuid primary key default gen_random_uuid(),
       destination_id uuid not null references public.destinations(id) on delete restrict,
@@ -148,108 +147,23 @@ export async function ensureSchema() {
       updated_at timestamptz not null default now()
     );
 
-    do $$
-    declare
-      fk_name text;
-      fk_del char;
-    begin
-      if exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public' and table_name='packages' and column_name='duration_minutes'
-      ) and not exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public' and table_name='packages' and column_name='duration'
-      ) then
-        alter table public.packages rename column duration_minutes to duration;
-        alter table public.packages alter column duration type text using duration::text;
-      end if;
-
-      if exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public' and table_name='packages' and column_name='price_cents'
-      ) and not exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public' and table_name='packages' and column_name='price'
-      ) then
-        alter table public.packages rename column price_cents to price;
-        alter table public.packages alter column price type text using price::text;
-      end if;
-
-      select c.conname, c.confdeltype
-        into fk_name, fk_del
-      from pg_constraint c
-      join pg_class t on t.oid = c.conrelid
-      join pg_class rt on rt.oid = c.confrelid
-      where t.relname = 'packages'
-        and rt.relname = 'destinations'
-        and c.contype = 'f'
-      limit 1;
-
-      if fk_name is not null and fk_del <> 'r' then
-        execute 'alter table public.packages drop constraint ' || quote_ident(fk_name);
-        execute 'alter table public.packages add constraint packages_destination_id_fkey foreign key (destination_id) references public.destinations(id) on delete restrict';
-      end if;
-
-      if exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public' and table_name='packages' and column_name='description'
-      ) then
-        update public.packages
-          set about = description
-        where (about is null or btrim(about) = '')
-          and description is not null
-          and btrim(description) <> '';
-
-        alter table public.packages drop column if exists description;
-      end if;
-    end $$;
-
     create index if not exists packages_destination_id_idx on public.packages(destination_id);
     create index if not exists packages_is_active_idx on public.packages(is_active);
     create index if not exists packages_created_at_idx on public.packages(created_at);
 
-    do $$
-    begin
-      if not exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'package_availability') then
-        create table public.package_availability (
-          id uuid primary key default gen_random_uuid(),
-          package_id uuid not null references public.packages(id) on delete cascade,
-          available_date date not null,
-          capacity integer not null,
-          remaining integer not null,
-          is_open boolean not null default true,
-          created_at timestamptz not null default now(),
-          updated_at timestamptz not null default now(),
-          constraint package_availability_capacity_chk check (capacity >= 0),
-          constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
-          constraint package_availability_unique unique(package_id, available_date)
-        );
-      else
-        -- Ensure the table has the correct columns
-        if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'package_availability' and column_name = 'available_date') then
-          -- Old schema detected, recreate the table
-          drop table if exists public.package_availability cascade;
-          create table public.package_availability (
-            id uuid primary key default gen_random_uuid(),
-            package_id uuid not null references public.packages(id) on delete cascade,
-            available_date date not null,
-            capacity integer not null,
-            remaining integer not null,
-            is_open boolean not null default true,
-            created_at timestamptz not null default now(),
-            updated_at timestamptz not null default now(),
-            constraint package_availability_capacity_chk check (capacity >= 0),
-            constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
-            constraint package_availability_unique unique(package_id, available_date)
-          );
-        end if;
-      end if;
-    end $$;
+    create table if not exists public.package_availability (
+      id uuid primary key default gen_random_uuid(),
+      package_id uuid not null references public.packages(id) on delete cascade,
+      available_date date not null,
+      capacity integer not null,
+      remaining integer not null,
+      is_open boolean not null default true,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      constraint package_availability_capacity_chk check (capacity >= 0),
+      constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
+      constraint package_availability_unique unique(package_id, available_date)
+    );
 
     create index if not exists package_availability_package_id_idx on public.package_availability(package_id);
     create index if not exists package_availability_available_date_idx on public.package_availability(available_date);
@@ -538,45 +452,4 @@ export async function ensureSchema() {
       `);
     }
   }
-
-  await pool.query(`
-    alter table public.destinations
-      add column if not exists media_urls text[] not null default '{}';
-
-    alter table public.bookings
-      add column if not exists idempotency_key text;
-
-    create unique index if not exists bookings_idempotency_key_uidx on public.bookings(idempotency_key) where idempotency_key is not null;
-
-    do $$
-    begin
-      if exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public'
-          and table_name='destinations'
-          and column_name='image_url'
-      ) then
-        execute '
-          update public.destinations
-          set media_urls = array[image_url]
-          where image_url is not null
-            and (media_urls is null or array_length(media_urls, 1) is null)
-        ';
-
-        execute 'alter table public.destinations drop column if exists image_url';
-      end if;
-
-      if exists (
-        select 1
-        from information_schema.columns
-        where table_schema='public'
-          and table_name='destinations'
-          and column_name=('display' || '_' || 'order')
-      ) then
-        execute 'alter table public.destinations drop column if exists ' || quote_ident('display' || '_' || 'order');
-      end if;
-    end
-    $$;
-  `);
 }

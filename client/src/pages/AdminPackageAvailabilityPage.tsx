@@ -44,10 +44,27 @@ export function AdminPackageAvailabilityPage() {
       
       if (rule) {
         setAvailabilityType(rule.availability_type);
-        setStartDate(rule.start_date ? new Date(rule.start_date) : undefined);
-        setEndDate(rule.end_date ? new Date(rule.end_date) : undefined);
+        if (rule.start_date) {
+          const [y, m, d] = rule.start_date.split('-');
+          setStartDate(new Date(Number(y), Number(m) - 1, Number(d)));
+        } else {
+          setStartDate(undefined);
+        }
+        if (rule.end_date) {
+          const [y, m, d] = rule.end_date.split('-');
+          setEndDate(new Date(Number(y), Number(m) - 1, Number(d)));
+        } else {
+          setEndDate(undefined);
+        }
         setExcludedWeekdays(rule.excluded_weekdays || []);
-        setSpecificDates(rule.specific_dates ? rule.specific_dates.map((d: string) => new Date(d)) : []);
+        if (rule.specific_dates) {
+          setSpecificDates(rule.specific_dates.map((dateStr: string) => {
+            const [y, m, d] = dateStr.split('-');
+            return new Date(Number(y), Number(m) - 1, Number(d));
+          }));
+        } else {
+          setSpecificDates([]);
+        }
         setIsOpen(rule.is_open);
       }
     } catch (e) {
@@ -184,7 +201,14 @@ export function AdminPackageAvailabilityPage() {
                         <input
                           type="date"
                           value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
-                          onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : undefined)}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              const [y, m, d] = e.target.value.split('-');
+                              setStartDate(new Date(Number(y), Number(m) - 1, Number(d)));
+                            } else {
+                              setStartDate(undefined);
+                            }
+                          }}
                           min={format(new Date(), 'yyyy-MM-dd')}
                           className="w-full rounded-md border px-3 py-2"
                           required
@@ -195,7 +219,14 @@ export function AdminPackageAvailabilityPage() {
                         <input
                           type="date"
                           value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
-                          onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              const [y, m, d] = e.target.value.split('-');
+                              setEndDate(new Date(Number(y), Number(m) - 1, Number(d)));
+                            } else {
+                              setEndDate(undefined);
+                            }
+                          }}
                           min={startDate ? format(startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
                           className="w-full rounded-md border px-3 py-2"
                           required

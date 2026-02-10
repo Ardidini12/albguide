@@ -35,6 +35,10 @@ export async function checkDate(req, res) {
     if (!date) {
       return res.status(400).json({ message: 'date query parameter is required' });
     }
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
     const isAvailable = await checkDateAvailability(req.params.packageId, date);
     return res.json({ available: isAvailable });
   } catch (err) {
