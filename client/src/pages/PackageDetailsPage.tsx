@@ -152,6 +152,33 @@ export function PackageDetailsPage() {
     setMediaIndex((prev) => (prev + 1) % mediaUrls.length);
   };
 
+  const goPrev = () => {
+    if (mediaUrls.length <= 1) return;
+    setMediaIndex((prev) => (prev - 1 + mediaUrls.length) % mediaUrls.length);
+  };
+
+  useEffect(() => {
+    if (!mediaUrls.length || mediaUrls.length < 2) return;
+
+    if (isVideo) {
+      const el = videoRef.current;
+      if (el) {
+        el.currentTime = 0;
+        const p = el.play();
+        if (p && typeof (p as Promise<void>).catch === 'function') {
+          (p as Promise<void>).catch(() => {});
+        }
+      }
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      setMediaIndex((i) => (i + 1) % mediaUrls.length);
+    }, 5000);
+
+    return () => window.clearInterval(id);
+  }, [isVideo, mediaUrls.length, mediaIndex, currentUrl]);
+
   const submitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pkg) return;
@@ -271,20 +298,66 @@ export function PackageDetailsPage() {
                   )}
 
                   {mediaUrls.length > 1 && (
-                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-                      {mediaUrls.map((_, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          aria-label={`Go to media ${idx + 1}`}
-                          className={idx === mediaIndex ? 'h-2 w-2 rounded-full bg-white' : 'h-2 w-2 rounded-full bg-white/60 hover:bg-white/80'}
-                          onClick={() => setMediaIndex(idx)}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <button
+                        type="button"
+                        onClick={goPrev}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-sm border hover:bg-white"
+                        aria-label="Previous media"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goNext}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-3 py-2 text-sm border hover:bg-white"
+                        aria-label="Next media"
+                      >
+                        Next
+                      </button>
+                      <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+                        {mediaUrls.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            aria-label={`Go to media ${idx + 1}`}
+                            className={idx === mediaIndex ? 'h-2 w-2 rounded-full bg-white' : 'h-2 w-2 rounded-full bg-white/60 hover:bg-white/80'}
+                            onClick={() => setMediaIndex(idx)}
+                          />
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
+
+              {mediaUrls.length > 1 && (
+                <div className="p-3 bg-white border-t">
+                  <div className="flex gap-2 overflow-x-auto">
+                    {mediaUrls.map((u, idx) => {
+                      const thumbIsVideo = isVideoUrl(String(u));
+                      return (
+                        <button
+                          key={`${u}-${idx}`}
+                          type="button"
+                          onClick={() => setMediaIndex(idx)}
+                          className={
+                            idx === mediaIndex
+                              ? 'h-16 w-24 flex-shrink-0 rounded-lg overflow-hidden border-2 border-purple-700 bg-gray-100'
+                              : 'h-16 w-24 flex-shrink-0 rounded-lg overflow-hidden border bg-gray-100 hover:border-gray-300'
+                          }
+                        >
+                          {thumbIsVideo ? (
+                            <video src={u} className="w-full h-full object-cover" />
+                          ) : (
+                            <img src={u} alt="" className="w-full h-full object-cover" decoding="async" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="p-8">
                 <div className="flex flex-wrap items-start justify-between gap-3">
