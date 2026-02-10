@@ -213,19 +213,43 @@ export async function ensureSchema() {
     create index if not exists packages_is_active_idx on public.packages(is_active);
     create index if not exists packages_created_at_idx on public.packages(created_at);
 
-    create table if not exists public.package_availability (
-      id uuid primary key default gen_random_uuid(),
-      package_id uuid not null references public.packages(id) on delete cascade,
-      available_date date not null,
-      capacity integer not null,
-      remaining integer not null,
-      is_open boolean not null default true,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      constraint package_availability_capacity_chk check (capacity >= 0),
-      constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
-      constraint package_availability_unique unique(package_id, available_date)
-    );
+    do $$
+    begin
+      if not exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'package_availability') then
+        create table public.package_availability (
+          id uuid primary key default gen_random_uuid(),
+          package_id uuid not null references public.packages(id) on delete cascade,
+          available_date date not null,
+          capacity integer not null,
+          remaining integer not null,
+          is_open boolean not null default true,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now(),
+          constraint package_availability_capacity_chk check (capacity >= 0),
+          constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
+          constraint package_availability_unique unique(package_id, available_date)
+        );
+      else
+        -- Ensure the table has the correct columns
+        if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'package_availability' and column_name = 'available_date') then
+          -- Old schema detected, recreate the table
+          drop table if exists public.package_availability cascade;
+          create table public.package_availability (
+            id uuid primary key default gen_random_uuid(),
+            package_id uuid not null references public.packages(id) on delete cascade,
+            available_date date not null,
+            capacity integer not null,
+            remaining integer not null,
+            is_open boolean not null default true,
+            created_at timestamptz not null default now(),
+            updated_at timestamptz not null default now(),
+            constraint package_availability_capacity_chk check (capacity >= 0),
+            constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
+            constraint package_availability_unique unique(package_id, available_date)
+          );
+        end if;
+      end if;
+    end $$;
 
     create index if not exists package_availability_package_id_idx on public.package_availability(package_id);
     create index if not exists package_availability_available_date_idx on public.package_availability(available_date);
