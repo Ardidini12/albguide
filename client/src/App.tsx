@@ -13,7 +13,7 @@ import { AdminSupportPage } from './pages/AdminSupportPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { DestinationsDetailsPage } from './pages/DestinationsDetailsPage'
 import { DestinationsPage } from './pages/DestinationsPage'
-import { HomePage } from './pages/HomePage'
+import { PremiumDashboard } from './pages/PremiumDashboard'
 import { LoginPage } from './pages/LoginPage'
 import { PackageDetailsPage } from './pages/PackageDetailsPage'
 import { PackagesPage } from './pages/PackagesPage'
@@ -31,7 +31,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<PremiumDashboard />} />
         <Route path="/packages" element={<PackagesPage />} />
         <Route path="/packages/:slug" element={<PackageDetailsPage />} />
         <Route path="/destinations" element={<DestinationsPage />} />
