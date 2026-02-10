@@ -30,7 +30,6 @@ export async function ensureSchema() {
       email text unique not null,
       password_hash text not null,
       name text,
-      profile_picture text,
       is_admin boolean not null default false,
       created_at timestamptz not null default now()
     );
@@ -216,30 +215,44 @@ export async function ensureSchema() {
 
     do $$
     begin
-      if exists (
-        select 1 from information_schema.columns
-        where table_schema='public' and table_name='package_availability' and column_name='capacity'
-      ) then
-        drop table if exists public.package_availability cascade;
+      if not exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'package_availability') then
+        create table public.package_availability (
+          id uuid primary key default gen_random_uuid(),
+          package_id uuid not null references public.packages(id) on delete cascade,
+          available_date date not null,
+          capacity integer not null,
+          remaining integer not null,
+          is_open boolean not null default true,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now(),
+          constraint package_availability_capacity_chk check (capacity >= 0),
+          constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
+          constraint package_availability_unique unique(package_id, available_date)
+        );
+      else
+        -- Ensure the table has the correct columns
+        if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'package_availability' and column_name = 'available_date') then
+          -- Old schema detected, recreate the table
+          drop table if exists public.package_availability cascade;
+          create table public.package_availability (
+            id uuid primary key default gen_random_uuid(),
+            package_id uuid not null references public.packages(id) on delete cascade,
+            available_date date not null,
+            capacity integer not null,
+            remaining integer not null,
+            is_open boolean not null default true,
+            created_at timestamptz not null default now(),
+            updated_at timestamptz not null default now(),
+            constraint package_availability_capacity_chk check (capacity >= 0),
+            constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
+            constraint package_availability_unique unique(package_id, available_date)
+          );
+        end if;
       end if;
     end $$;
 
-    create table if not exists public.package_availability (
-      id uuid primary key default gen_random_uuid(),
-      package_id uuid not null references public.packages(id) on delete cascade,
-      availability_type text not null default 'always',
-      start_date date,
-      end_date date,
-      excluded_weekdays integer[] default '{}',
-      specific_dates date[] default '{}',
-      is_open boolean not null default true,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now(),
-      constraint package_availability_type_chk check (availability_type in ('always','date_range','specific_dates','always_except')),
-      constraint package_availability_unique unique(package_id)
-    );
-
     create index if not exists package_availability_package_id_idx on public.package_availability(package_id);
+    create index if not exists package_availability_available_date_idx on public.package_availability(available_date);
 
     create table if not exists public.bookings (
       id uuid primary key default gen_random_uuid(),
@@ -304,45 +317,11 @@ export async function ensureSchema() {
       review_id uuid not null references public.reviews(id) on delete cascade,
       user_id uuid not null references public.users(id) on delete cascade,
       path text not null,
-      file_type text not null default 'image',
-      file_size bigint not null default 0,
-      created_at timestamptz not null default now(),
-      constraint review_images_file_type_chk check (file_type in ('image','video'))
+      created_at timestamptz not null default now()
     );
 
     create index if not exists review_images_review_id_idx on public.review_images(review_id);
     create index if not exists review_images_user_id_idx on public.review_images(user_id);
-
-    do $$
-    begin
-      if not exists (
-        select 1 from information_schema.columns 
-        where table_schema = 'public' 
-        and table_name = 'review_images' 
-        and column_name = 'file_size'
-      ) then
-        alter table public.review_images add column file_size bigint not null default 0;
-      end if;
-
-      if not exists (
-        select 1 from information_schema.columns 
-        where table_schema = 'public' 
-        and table_name = 'review_images' 
-        and column_name = 'file_type'
-      ) then
-        alter table public.review_images add column file_type text not null default 'image';
-        alter table public.review_images add constraint review_images_file_type_chk check (file_type in ('image','video'));
-      end if;
-
-      if not exists (
-        select 1 from information_schema.columns 
-        where table_schema = 'public' 
-        and table_name = 'users' 
-        and column_name = 'profile_picture'
-      ) then
-        alter table public.users add column profile_picture text;
-      end if;
-    end $$;
   `);
 
   if (String(process.env.ENABLE_RLS || '').toLowerCase() === 'true') {
