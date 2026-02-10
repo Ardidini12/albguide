@@ -1,6 +1,6 @@
 import { createSignedReadUrl, isLikelyExternalUrl } from './storageService.js';
 import { findBookingById } from '../models/bookingModel.js';
-import { createReview, listReviewsAdmin, listReviewsByPackage, updateReviewById } from '../models/reviewModel.js';
+import { createReview, listReviewsAdmin, listReviewsByPackage, updateReviewById, deleteReviewById, listReviewsByUser, updateReviewByUser, deleteReviewByUser } from '../models/reviewModel.js';
 import { listReviewImagesByReview } from '../models/reviewImageModel.js';
 
 async function decorateImagePath(path) {
@@ -18,7 +18,13 @@ export async function listReviewsPublic({ packageId }) {
     const imageUrls = [];
     for (const img of images) {
       const url = await decorateImagePath(img.path);
-      if (url) imageUrls.push({ url, path: img.path, created_at: img.created_at });
+      if (url) imageUrls.push({ 
+        url, 
+        path: img.path, 
+        file_type: img.file_type || 'image',
+        file_size: img.file_size || 0,
+        created_at: img.created_at 
+      });
     }
 
     decorated.push({
@@ -86,10 +92,63 @@ export async function createReviewForBooking({ bookingId, userId, packageId, rat
     rating: r,
     title,
     body,
-    moderationStatus: 'pending',
+    moderationStatus: 'approved',
   });
 }
 
 export async function updateReviewModerationAdmin(id, moderationStatus) {
   return await updateReviewById(id, { moderationStatus });
+}
+
+export async function deleteReviewAdmin(id) {
+  return await deleteReviewById(id);
+}
+
+export async function listReviewsForUser(userId) {
+  const reviews = await listReviewsByUser(userId);
+  const decorated = [];
+  
+  for (const r of reviews) {
+    const images = await listReviewImagesByReview(r.id);
+    const imageUrls = [];
+    for (const img of images) {
+      const url = await decorateImagePath(img.path);
+      if (url) imageUrls.push({ 
+        id: img.id,
+        url, 
+        path: img.path, 
+        file_type: img.file_type || 'image',
+        file_size: img.file_size || 0,
+        created_at: img.created_at 
+      });
+    }
+
+    decorated.push({
+      ...r,
+      images: imageUrls,
+    });
+  }
+
+  return decorated;
+}
+
+export async function updateReviewForUser(id, userId, { rating, title, body }) {
+  const r = Number(rating);
+  if (!Number.isFinite(r) || r < 1 || r > 5) {
+    const err = new Error('rating must be between 1 and 5');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!body) {
+    const err = new Error('body is required');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return await updateReviewByUser(id, userId, { rating: r, title, body });
+}
+
+export async function deleteReviewForUser(id, userId) {
+  return await deleteReviewByUser(id, userId);
 }

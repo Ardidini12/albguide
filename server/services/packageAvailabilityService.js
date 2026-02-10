@@ -1,12 +1,12 @@
 import {
-  deleteAvailabilityById,
-  listAvailability,
-  updateAvailabilityById,
+  getAvailability,
   upsertAvailability,
+  deleteAvailability,
+  isDateAvailable,
 } from '../models/packageAvailabilityModel.js';
 import { findPackageById } from '../models/packageModel.js';
 
-export async function listAvailabilityPublic({ packageId } = {}) {
+export async function getAvailabilityPublic(packageId) {
   const pkg = await findPackageById(packageId);
   if (!pkg || !pkg.is_active || !pkg.destination_is_active) {
     const err = new Error('Package not found');
@@ -14,55 +14,62 @@ export async function listAvailabilityPublic({ packageId } = {}) {
     throw err;
   }
 
-  return await listAvailability({ packageId, includeClosed: false });
+  const availability = await getAvailability(packageId);
+  return availability && availability.is_open ? availability : null;
 }
 
-export async function listAvailabilityAdmin({ packageId } = {}) {
-  return await listAvailability({ packageId, includeClosed: true });
+export async function getAvailabilityAdmin(packageId) {
+  return await getAvailability(packageId);
 }
 
-export async function upsertAvailabilityAdmin({ packageId, date, capacity, remaining, isOpen }) {
+export async function checkDateAvailability(packageId, date) {
+  const availability = await getAvailability(packageId);
+  return isDateAvailable(availability, date);
+}
+
+export async function upsertAvailabilityAdmin({ packageId, availabilityType, startDate, endDate, excludedWeekdays, specificDates, isOpen }) {
   if (!packageId) {
     const err = new Error('package_id is required');
     err.statusCode = 400;
     throw err;
   }
 
-  if (!date) {
-    const err = new Error('available_date is required');
+  if (!availabilityType) {
+    const err = new Error('availability_type is required');
     err.statusCode = 400;
     throw err;
   }
 
-  const cap = Number(capacity);
-  const rem = remaining === undefined ? cap : Number(remaining);
-
-  if (!Number.isFinite(cap) || cap < 0) {
-    const err = new Error('capacity must be a non-negative number');
+  const validTypes = ['always', 'date_range', 'specific_dates', 'always_except'];
+  if (!validTypes.includes(availabilityType)) {
+    const err = new Error('Invalid availability_type');
     err.statusCode = 400;
     throw err;
   }
 
-  if (!Number.isFinite(rem) || rem < 0 || rem > cap) {
-    const err = new Error('remaining must be between 0 and capacity');
+  if (availabilityType === 'date_range' && (!startDate || !endDate)) {
+    const err = new Error('start_date and end_date are required for date_range type');
     err.statusCode = 400;
     throw err;
   }
 
-  return await upsertAvailability({ packageId, date, capacity: cap, remaining: rem, isOpen: Boolean(isOpen) });
-}
+  if (availabilityType === 'specific_dates' && (!specificDates || specificDates.length === 0)) {
+    const err = new Error('specific_dates array is required for specific_dates type');
+    err.statusCode = 400;
+    throw err;
+  }
 
-export async function updateAvailabilityAdmin(id, payload) {
-  const cap = payload?.capacity !== undefined ? Number(payload.capacity) : undefined;
-  const rem = payload?.remaining !== undefined ? Number(payload.remaining) : undefined;
-
-  return await updateAvailabilityById(id, {
-    capacity: cap,
-    remaining: rem,
-    isOpen: payload?.is_open,
+  return await upsertAvailability({
+    packageId,
+    availabilityType,
+    startDate: startDate || null,
+    endDate: endDate || null,
+    excludedWeekdays: excludedWeekdays || [],
+    specificDates: specificDates || [],
+    isOpen: Boolean(isOpen)
   });
 }
 
-export async function deleteAvailabilityAdmin(id) {
-  return await deleteAvailabilityById(id);
+export async function deleteAvailabilityAdmin(packageId) {
+  return await deleteAvailability(packageId);
 }

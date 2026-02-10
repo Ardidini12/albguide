@@ -7,6 +7,7 @@ import {
   updatePackageById,
 } from '../models/packageModel.js';
 import { slugify } from '../utils/slug.js';
+import { deleteMultipleFromStorage, extractPathFromSignedUrl } from './storageService.js';
 
 export async function listPackagesPublic({ destinationId } = {}) {
   return await listPackages({ includeInactive: false, destinationId });
@@ -113,5 +114,21 @@ export async function updatePackageAdmin(id, payload) {
 }
 
 export async function deletePackageAdmin(id) {
+  const pkg = await findPackageById(id);
+  
+  if (pkg && pkg.media_urls && Array.isArray(pkg.media_urls)) {
+    const paths = pkg.media_urls
+      .map(url => extractPathFromSignedUrl(url))
+      .filter(path => path !== null);
+    
+    if (paths.length > 0) {
+      const result = await deleteMultipleFromStorage(paths);
+      // Ignore 404 errors - files already deleted is fine
+      if (!result.success && result.error?.statusCode !== '404') {
+        console.warn('Failed to delete package media from storage:', result.error);
+      }
+    }
+  }
+  
   return await deletePackageById(id);
 }

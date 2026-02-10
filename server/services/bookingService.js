@@ -1,6 +1,7 @@
 import { pool } from '../config/db.js';
 import { createBooking, listBookings, updateBookingById } from '../models/bookingModel.js';
 import { findPackageById } from '../models/packageModel.js';
+import { getAvailability, isDateAvailable } from '../models/packageAvailabilityModel.js';
 
 function isValidE164(value) {
   return typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
@@ -66,6 +67,19 @@ export async function createBookingAnyUser({
     throw err;
   }
 
+  const availabilityRule = await getAvailability(packageId);
+  if (!availabilityRule || !availabilityRule.is_open) {
+    const err = new Error('Package availability is not published');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!isDateAvailable(availabilityRule, bookingDate)) {
+    const err = new Error('Selected date is not available');
+    err.statusCode = 400;
+    throw err;
+  }
+
   const client = await pool.connect();
 
   try {
@@ -82,34 +96,6 @@ export async function createBookingAnyUser({
         return existing.rows[0];
       }
     }
-
-    const availability = await client.query(
-      `select *
-       from public.package_availability
-       where package_id=$1
-         and available_date=$2
-         and is_open=true
-       for update`,
-      [packageId, bookingDate]
-    );
-
-    const row = availability.rows[0];
-    if (!row) {
-      const err = new Error('Selected date is not available');
-      err.statusCode = 400;
-      throw err;
-    }
-
-    if (row.remaining < travelerCount) {
-      const err = new Error('Not enough spots remaining for this date');
-      err.statusCode = 409;
-      throw err;
-    }
-
-    await client.query(
-      'update public.package_availability set remaining = remaining - $1, updated_at=now() where id=$2',
-      [travelerCount, row.id]
-    );
 
     try {
       const booking = await client.query(

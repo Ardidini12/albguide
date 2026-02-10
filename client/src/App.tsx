@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { RequireAdmin } from './components/RequireAdmin'
 import { RequireAuth } from './components/RequireAuth'
+import { AdminBookingsPage } from './pages/AdminBookingsPage'
 import { AdminDashboard } from './pages/AdminDashboard'
 import { AdminDestinationsPage } from './pages/AdminDestinationsPage'
 import { AdminPackageAvailabilityPage } from './pages/AdminPackageAvailabilityPage'
@@ -9,6 +10,7 @@ import { AdminPackagesPage } from './pages/AdminPackagesPage'
 import { AdminReviewsPage } from './pages/AdminReviewsPage'
 import { AdminServicesPage } from './pages/AdminServicesPage'
 import { AdminSupportPage } from './pages/AdminSupportPage'
+import { AdminUsersPage } from './pages/AdminUsersPage'
 import { DestinationsDetailsPage } from './pages/DestinationsDetailsPage'
 import { DestinationsPage } from './pages/DestinationsPage'
 import { HomePage } from './pages/HomePage'
@@ -22,6 +24,8 @@ import { SupportPage } from './pages/SupportPage'
 import { UserDashboard } from './pages/UserDashboard'
 import { UserBookingsPage } from './pages/UserBookingsPage'
 import { UserFavoritesPage } from './pages/UserFavoritesPage'
+import { UserReviewsPage } from './pages/UserReviewsPage'
+import { UserProfilePage } from './pages/UserProfilePage'
 
 export default function App() {
   return (
@@ -68,6 +72,24 @@ export default function App() {
           element={
             <RequireAuth>
               <UserFavoritesPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/user/reviews"
+          element={
+            <RequireAuth>
+              <UserReviewsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/user/profile"
+          element={
+            <RequireAuth>
+              <UserProfilePage />
             </RequireAuth>
           }
         />
@@ -131,6 +153,24 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminReviewsPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/bookings"
+          element={
+            <RequireAdmin>
+              <AdminBookingsPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <RequireAdmin>
+              <AdminUsersPage />
             </RequireAdmin>
           }
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -20,6 +20,7 @@ type BookingRow = {
 
 export function UserBookingsPage() {
   const { token } = useAuth();
+  const reviewFormRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,15 @@ export function UserBookingsPage() {
   const [body, setBody] = useState('');
   const [reviewMsg, setReviewMsg] = useState<string | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [pendingMediaFiles, setPendingMediaFiles] = useState<File[]>([]);
+
+  const statusColors: Record<string, string> = {
+    pending_contact: 'bg-yellow-100 text-yellow-800',
+    confirmed: 'bg-green-100 text-green-800',
+    completed: 'bg-blue-100 text-blue-800',
+    cancelled: 'bg-red-100 text-red-800',
+  };
 
   const load = async () => {
     setError(null);
@@ -57,6 +67,11 @@ export function UserBookingsPage() {
     setRating(5);
     setTitle('');
     setBody('');
+    setPendingMediaFiles([]);
+    
+    setTimeout(() => {
+      reviewFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const submitReview = async (e: React.FormEvent) => {
@@ -65,7 +80,7 @@ export function UserBookingsPage() {
     setReviewLoading(true);
 
     try {
-      await apiFetch('/reviews', {
+      const result = await apiFetch('/reviews', {
         method: 'POST',
         headers: authHeader(token),
         body: JSON.stringify({
@@ -77,11 +92,116 @@ export function UserBookingsPage() {
         }),
       });
 
-      setReviewMsg('Review submitted (pending moderation).');
+      const reviewId = result.review.id;
+
+      if (pendingMediaFiles.length > 0) {
+        setReviewMsg('Review submitted! Uploading media...');
+        await uploadPendingMedia(reviewId);
+      } else {
+        setReviewMsg('Review submitted successfully!');
+      }
     } catch (e2) {
       setReviewMsg((e2 as Error).message);
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(video.duration);
+      };
+      video.onerror = () => reject(new Error('Failed to load video'));
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleMediaSelection = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles: File[] = [];
+    
+    for (const file of Array.from(files)) {
+      const isVideo = file.type.startsWith('video/');
+      
+      if (isVideo) {
+        try {
+          const duration = await getVideoDuration(file);
+          if (duration > 30) {
+            setReviewMsg(`Video "${file.name}" is ${duration.toFixed(1)}s long. Maximum is 30 seconds.`);
+            continue;
+          }
+        } catch (err) {
+          setReviewMsg(`Failed to validate video "${file.name}": ${(err as Error).message}`);
+          continue;
+        }
+      }
+      
+      validFiles.push(file);
+    }
+
+    setPendingMediaFiles(prev => [...prev, ...validFiles]);
+    setReviewMsg(`${validFiles.length} file(s) ready to upload with review.`);
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPendingMedia = async (reviewId: string) => {
+    if (pendingMediaFiles.length === 0) return;
+
+    setUploadingMedia(true);
+
+    try {
+      for (const file of pendingMediaFiles) {
+        const isVideo = file.type.startsWith('video/');
+        let videoDuration: number | undefined;
+
+        if (isVideo) {
+          videoDuration = await getVideoDuration(file);
+        }
+
+        const fileType = isVideo ? 'video' : 'image';
+
+        const signData = await apiFetch(`/reviews/${reviewId}/images/sign`, {
+          method: 'POST',
+          headers: authHeader(token),
+          body: JSON.stringify({
+            contentType: file.type,
+            file_type: fileType,
+            file_size: file.size,
+            video_duration: videoDuration,
+          }),
+        });
+
+        await fetch(signData.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
+
+        await apiFetch(`/reviews/${reviewId}/images`, {
+          method: 'POST',
+          headers: authHeader(token),
+          body: JSON.stringify({
+            path: signData.path,
+            file_type: fileType,
+            file_size: file.size,
+          }),
+        });
+      }
+
+      setPendingMediaFiles([]);
+      setReviewMsg('Review and media submitted successfully!');
+    } catch (e) {
+      setReviewMsg((e as Error).message);
+    } finally {
+      setUploadingMedia(false);
     }
   };
 
@@ -120,7 +240,9 @@ export function UserBookingsPage() {
                       <div className="mt-1 text-xs text-gray-500">Package ID: {b.package_id}</div>
                     </div>
                     <div className="text-sm">
-                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800">{b.status}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${statusColors[b.status] || 'bg-gray-100 text-gray-800'}`}>
+                        {b.status.replace('_', ' ')}
+                      </span>
                     </div>
                   </div>
 
@@ -156,7 +278,7 @@ export function UserBookingsPage() {
             </div>
           )}
 
-          <div className="mt-8 rounded-2xl border p-6">
+          <div ref={reviewFormRef} className="mt-8 rounded-2xl border p-6">
             <div className="text-lg font-semibold text-gray-900">Leave a review</div>
             <p className="mt-1 text-sm text-gray-600">Select a completed booking above to prefill.</p>
 
@@ -200,12 +322,47 @@ export function UserBookingsPage() {
               </div>
 
               <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Add Media (Optional)</label>
+                <p className="text-xs text-gray-600 mb-2">
+                  Upload images or videos (max 30 seconds per video). Total size limit: 50MB.
+                </p>
+                <label className="inline-flex items-center px-4 py-2 rounded-md border bg-white text-sm hover:bg-gray-50 cursor-pointer">
+                  Choose Files
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => handleMediaSelection(e.target.files)}
+                    disabled={reviewLoading}
+                  />
+                </label>
+                {pendingMediaFiles.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-xs font-medium text-gray-700">{pendingMediaFiles.length} file(s) selected:</div>
+                    {pendingMediaFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2 text-xs">
+                        <span className="truncate flex-1">{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <button
+                          type="button"
+                          onClick={() => removePendingFile(idx)}
+                          className="ml-2 text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
                 <button
                   disabled={reviewLoading || !reviewBookingId}
                   className="w-full rounded-md bg-red-700 text-white py-2 text-sm font-medium hover:bg-red-600 disabled:opacity-50"
                   type="submit"
                 >
-                  {reviewLoading ? 'Submitting…' : 'Submit review'}
+                  {reviewLoading ? (uploadingMedia ? 'Uploading media...' : 'Submitting…') : 'Submit review'}
                 </button>
               </div>
             </form>

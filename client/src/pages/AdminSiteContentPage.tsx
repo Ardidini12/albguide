@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -74,6 +75,9 @@ export function AdminSiteContentPage() {
         <div className="rounded-2xl border bg-white shadow-sm p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
+              <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-700 mb-2">
+                ← Back to Dashboard
+              </Link>
               <h1 className="text-2xl font-bold text-gray-900">Site Content</h1>
               <p className="mt-1 text-gray-600">Edit Services and Support page content.</p>
             </div>

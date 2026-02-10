@@ -1,93 +1,87 @@
 import { pool } from '../config/db.js';
 
-export async function listAvailability({ packageId, includeClosed = false } = {}) {
-  const where = [];
-  const values = [];
-  let i = 1;
-
-  if (packageId) {
-    where.push(`package_id=$${i++}`);
-    values.push(packageId);
-  }
-
-  if (!includeClosed) {
-    where.push('is_open=true');
-  }
-
-  const sql = `
-    select *
-    from public.package_availability
-    ${where.length ? `where ${where.join(' and ')}` : ''}
-    order by available_date asc
-  `;
-
-  const result = await pool.query(sql, values);
-  return result.rows;
+export async function getAvailability(packageId) {
+  const result = await pool.query(
+    'select * from public.package_availability where package_id=$1',
+    [packageId]
+  );
+  return result.rows[0] || null;
 }
 
-export async function upsertAvailability({ packageId, date, capacity, remaining, isOpen }) {
+export async function upsertAvailability({ packageId, availabilityType, startDate, endDate, excludedWeekdays, specificDates, isOpen }) {
   const result = await pool.query(
     `insert into public.package_availability (
       package_id,
-      available_date,
-      capacity,
-      remaining,
+      availability_type,
+      start_date,
+      end_date,
+      excluded_weekdays,
+      specific_dates,
       is_open
-    ) values ($1,$2,$3,$4,$5)
-    on conflict (package_id, available_date)
+    ) values ($1,$2,$3,$4,$5,$6,$7)
+    on conflict (package_id)
     do update set
-      capacity=excluded.capacity,
-      remaining=excluded.remaining,
+      availability_type=excluded.availability_type,
+      start_date=excluded.start_date,
+      end_date=excluded.end_date,
+      excluded_weekdays=excluded.excluded_weekdays,
+      specific_dates=excluded.specific_dates,
       is_open=excluded.is_open,
       updated_at=now()
     returning *`,
-    [packageId, date, capacity, remaining, Boolean(isOpen)]
+    [packageId, availabilityType, startDate, endDate, excludedWeekdays, specificDates, Boolean(isOpen)]
   );
 
   return result.rows[0];
 }
 
-export async function findAvailabilityById(id) {
-  const result = await pool.query('select * from public.package_availability where id=$1', [id]);
-  return result.rows[0] || null;
-}
-
-export async function deleteAvailabilityById(id) {
-  const result = await pool.query('delete from public.package_availability where id=$1 returning id', [id]);
+export async function deleteAvailability(packageId) {
+  const result = await pool.query(
+    'delete from public.package_availability where package_id=$1 returning id',
+    [packageId]
+  );
   return result.rows[0]?.id || null;
 }
 
-export async function updateAvailabilityById(id, { capacity, remaining, isOpen }) {
-  const fields = [];
-  const values = [];
-  let i = 1;
-
-  if (capacity !== undefined) {
-    fields.push(`capacity=$${i++}`);
-    values.push(capacity);
+export function isDateAvailable(availabilityRule, date) {
+  if (!availabilityRule || !availabilityRule.is_open) {
+    return false;
   }
 
-  if (remaining !== undefined) {
-    fields.push(`remaining=$${i++}`);
-    values.push(remaining);
+  const checkDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (checkDate < today) {
+    return false;
   }
 
-  if (isOpen !== undefined) {
-    fields.push(`is_open=$${i++}`);
-    values.push(Boolean(isOpen));
+  const { availability_type, start_date, end_date, excluded_weekdays, specific_dates } = availabilityRule;
+
+  switch (availability_type) {
+    case 'always':
+      return true;
+
+    case 'date_range':
+      if (!start_date || !end_date) return false;
+      const start = new Date(start_date);
+      const end = new Date(end_date);
+      return checkDate >= start && checkDate <= end;
+
+    case 'specific_dates':
+      if (!specific_dates || specific_dates.length === 0) return false;
+      const dateStr = checkDate.toISOString().split('T')[0];
+      return specific_dates.some(d => {
+        const specificDateStr = new Date(d).toISOString().split('T')[0];
+        return specificDateStr === dateStr;
+      });
+
+    case 'always_except':
+      if (!excluded_weekdays || excluded_weekdays.length === 0) return true;
+      const dayOfWeek = checkDate.getDay();
+      return !excluded_weekdays.includes(dayOfWeek);
+
+    default:
+      return false;
   }
-
-  if (!fields.length) {
-    return await findAvailabilityById(id);
-  }
-
-  fields.push('updated_at=now()');
-  values.push(id);
-
-  const result = await pool.query(
-    `update public.package_availability set ${fields.join(', ')} where id=$${i} returning *`,
-    values
-  );
-
-  return result.rows[0] || null;
 }
