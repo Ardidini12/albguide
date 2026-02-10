@@ -116,6 +116,10 @@ export async function updatePassword(req, res) {
     return res.status(400).json({ message: 'currentPassword and newPassword are required' });
   }
 
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: 'newPassword must be at least 8 characters' });
+  }
+
   try {
     const updated = await changePassword(req.user.sub, currentPassword, newPassword);
     if (!updated) return res.status(404).json({ message: 'User not found' });

@@ -31,7 +31,7 @@ export async function getTotalFileSizeByReview(reviewId) {
     'select coalesce(sum(file_size), 0)::bigint as total from public.review_images where review_id=$1',
     [reviewId]
   );
-  return result.rows[0]?.total || 0;
+  return Number(result.rows[0]?.total || 0);
 }
 
 export async function deleteReviewImage(id, userId) {

@@ -157,47 +157,74 @@ export function UserBookingsPage() {
 
     setUploadingMedia(true);
 
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+    let runningTotal = 0;
+    const succeeded: string[] = [];
+    const failed: string[] = [];
+
     try {
       for (const file of pendingMediaFiles) {
-        const isVideo = file.type.startsWith('video/');
-        let videoDuration: number | undefined;
-
-        if (isVideo) {
-          videoDuration = await getVideoDuration(file);
+        if (runningTotal + file.size > MAX_TOTAL_SIZE) {
+          failed.push(file.name);
+          continue;
         }
 
-        const fileType = isVideo ? 'video' : 'image';
+        try {
+          const isVideo = file.type.startsWith('video/');
+          let videoDuration: number | undefined;
 
-        const signData = await apiFetch(`/reviews/${reviewId}/images/sign`, {
-          method: 'POST',
-          headers: authHeader(token),
-          body: JSON.stringify({
-            contentType: file.type,
-            file_type: fileType,
-            file_size: file.size,
-            video_duration: videoDuration,
-          }),
-        });
+          if (isVideo) {
+            videoDuration = await getVideoDuration(file);
+          }
 
-        await fetch(signData.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type },
-        });
+          const fileType = isVideo ? 'video' : 'image';
 
-        await apiFetch(`/reviews/${reviewId}/images`, {
-          method: 'POST',
-          headers: authHeader(token),
-          body: JSON.stringify({
-            path: signData.path,
-            file_type: fileType,
-            file_size: file.size,
-          }),
-        });
+          const signData = await apiFetch(`/reviews/${reviewId}/images/sign`, {
+            method: 'POST',
+            headers: authHeader(token),
+            body: JSON.stringify({
+              contentType: file.type,
+              file_type: fileType,
+              file_size: file.size,
+              video_duration: videoDuration,
+            }),
+          });
+
+          const uploadResponse = await fetch(signData.uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type },
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error(`Upload failed with status ${uploadResponse.status}`);
+          }
+
+          await apiFetch(`/reviews/${reviewId}/images`, {
+            method: 'POST',
+            headers: authHeader(token),
+            body: JSON.stringify({
+              path: signData.path,
+              file_type: fileType,
+              file_size: file.size,
+            }),
+          });
+
+          runningTotal += file.size;
+          succeeded.push(file.name);
+          setPendingMediaFiles(prev => prev.filter(f => f !== file));
+        } catch (fileError) {
+          failed.push(file.name);
+        }
       }
 
-      setPendingMediaFiles([]);
-      setReviewMsg('Review and media submitted successfully!');
+      if (succeeded.length > 0 && failed.length === 0) {
+        setReviewMsg('Review and media submitted successfully!');
+      } else if (succeeded.length > 0 && failed.length > 0) {
+        setReviewMsg(`Partially uploaded. Succeeded: ${succeeded.join(', ')}. Failed: ${failed.join(', ')}`);
+      } else {
+        setReviewMsg(`Upload failed for: ${failed.join(', ')}`);
+      }
     } catch (e) {
       setReviewMsg((e as Error).message);
     } finally {

@@ -127,15 +127,15 @@ export function UserReviewsPage() {
 
     const currentSize = (review.images || []).reduce((sum, img) => sum + img.file_size, 0);
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+    let runningSize = currentSize;
 
     setUploadingTo(reviewId);
     setError(null);
 
     try {
       for (const file of Array.from(files)) {
-        const newSize = currentSize + file.size;
-        if (newSize > MAX_TOTAL_SIZE) {
-          setError(`Total file size would exceed 50MB limit. Current: ${(currentSize / 1024 / 1024).toFixed(2)}MB, Adding: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        if (runningSize + file.size > MAX_TOTAL_SIZE) {
+          setError(`Total file size would exceed 50MB limit. Current: ${(runningSize / 1024 / 1024).toFixed(2)}MB, Adding: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
           break;
         }
 
@@ -164,11 +164,15 @@ export function UserReviewsPage() {
           }),
         });
 
-        await fetch(signData.uploadUrl, {
+        const uploadResponse = await fetch(signData.uploadUrl, {
           method: 'PUT',
           body: file,
           headers: { 'Content-Type': file.type },
         });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed for "${file.name}" with status ${uploadResponse.status}`);
+        }
 
         await apiFetch(`/reviews/${reviewId}/images`, {
           method: 'POST',
@@ -179,6 +183,8 @@ export function UserReviewsPage() {
             file_size: file.size
           }),
         });
+
+        runningSize += file.size;
       }
 
       await load();

@@ -124,7 +124,7 @@ export async function deletePackageAdmin(id) {
     if (paths.length > 0) {
       const result = await deleteMultipleFromStorage(paths);
       // Ignore 404 errors - files already deleted is fine
-      if (!result.success && result.error?.statusCode !== '404') {
+      if (!result.success && result.error?.statusCode !== '404' && result.error?.status !== 404) {
         console.warn('Failed to delete package media from storage:', result.error);
       }
     }

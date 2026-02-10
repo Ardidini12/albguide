@@ -75,14 +75,12 @@ export async function deleteDestinationAdmin(id) {
   const destination = await findDestinationById(id);
   
   if (destination && destination.media_urls && Array.isArray(destination.media_urls)) {
-    const paths = destination.media_urls
-      .map(url => extractPathFromSignedUrl(url))
-      .filter(path => path !== null);
+    const paths = destination.media_urls.filter(path => path && typeof path === 'string' && path.trim() !== '');
     
     if (paths.length > 0) {
       const result = await deleteMultipleFromStorage(paths);
       // Ignore 404 errors - files already deleted is fine
-      if (!result.success && result.error?.statusCode !== '404') {
+      if (!result.success && result.error?.statusCode !== '404' && result.error?.status !== 404) {
         console.warn('Failed to delete destination media from storage:', result.error);
       }
     }

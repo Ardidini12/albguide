@@ -47,7 +47,13 @@ export async function updateUserMe(userId, { name }) {
 }
 
 export async function changePassword(userId, currentPassword, newPassword) {
-  const user = await findUserByEmailWithPassword((await findUserById(userId)).email);
+  const userById = await findUserById(userId);
+  if (!userById) {
+    const err = new Error('User not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  const user = await findUserByEmailWithPassword(userById.email);
   if (!user) {
     const err = new Error('User not found');
     err.statusCode = 404;

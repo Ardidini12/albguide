@@ -36,19 +36,22 @@ export function countAvailableDays(availability: AvailabilityRule | null, startD
     let isAvailable = false;
     
     switch (availability_type) {
-      case 'always':
+      case 'always': {
         isAvailable = true;
         break;
+      }
         
-      case 'date_range':
+      case 'date_range': {
         if (start_date && av_end_date) {
-          const start = new Date(start_date);
-          const end = new Date(av_end_date);
-          isAvailable = current >= start && current <= end;
+          const dateStr = format(current, 'yyyy-MM-dd');
+          const startStr = format(new Date(start_date), 'yyyy-MM-dd');
+          const endStr = format(new Date(av_end_date), 'yyyy-MM-dd');
+          isAvailable = dateStr >= startStr && dateStr <= endStr;
         }
         break;
+      }
         
-      case 'specific_dates':
+      case 'specific_dates': {
         if (specific_dates && specific_dates.length > 0) {
           const dateStr = format(current, 'yyyy-MM-dd');
           isAvailable = specific_dates.some(d => {
@@ -57,8 +60,9 @@ export function countAvailableDays(availability: AvailabilityRule | null, startD
           });
         }
         break;
+      }
         
-      case 'always_except':
+      case 'always_except': {
         if (!excluded_weekdays || excluded_weekdays.length === 0) {
           isAvailable = true;
         } else {
@@ -66,6 +70,7 @@ export function countAvailableDays(availability: AvailabilityRule | null, startD
           isAvailable = !excluded_weekdays.includes(dayOfWeek);
         }
         break;
+      }
     }
     
     if (isAvailable) count++;
@@ -86,27 +91,32 @@ export function AvailabilityCalendar({ availability, onDateSelect, selectedDates
     const { availability_type, start_date, end_date, excluded_weekdays, specific_dates } = availability;
 
     switch (availability_type) {
-      case 'always':
+      case 'always': {
         return true;
+      }
 
-      case 'date_range':
+      case 'date_range': {
         if (!start_date || !end_date) return false;
-        const start = new Date(start_date);
-        const end = new Date(end_date);
-        return date >= start && date <= end;
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const startStr = format(new Date(start_date), 'yyyy-MM-dd');
+        const endStr = format(new Date(end_date), 'yyyy-MM-dd');
+        return dateStr >= startStr && dateStr <= endStr;
+      }
 
-      case 'specific_dates':
+      case 'specific_dates': {
         if (!specific_dates || specific_dates.length === 0) return false;
         const dateStr = format(date, 'yyyy-MM-dd');
         return specific_dates.some(d => {
           const specificDateStr = format(new Date(d), 'yyyy-MM-dd');
           return specificDateStr === dateStr;
         });
+      }
 
-      case 'always_except':
+      case 'always_except': {
         if (!excluded_weekdays || excluded_weekdays.length === 0) return true;
         const dayOfWeek = date.getDay();
         return !excluded_weekdays.includes(dayOfWeek);
+      }
 
       default:
         return false;

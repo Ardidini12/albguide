@@ -11,7 +11,8 @@ function getHeaderValue(headers: HeadersInit | undefined, name: string) {
     return found?.[1];
   }
   const obj = headers as Record<string, string>;
-  return obj[name] ?? obj[name.toLowerCase()];
+  const foundKey = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
+  return foundKey ? obj[foundKey] : undefined;
 }
 
 function getGetDedupeKey(path: string, init: RequestInit) {
