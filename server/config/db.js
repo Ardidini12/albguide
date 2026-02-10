@@ -153,20 +153,19 @@ export async function ensureSchema() {
 
     create table if not exists public.package_availability (
       id uuid primary key default gen_random_uuid(),
-      package_id uuid not null references public.packages(id) on delete cascade,
-      available_date date not null,
-      capacity integer not null,
-      remaining integer not null,
+      package_id uuid not null unique references public.packages(id) on delete cascade,
+      availability_type text not null,
+      start_date date,
+      end_date date,
+      excluded_weekdays integer[],
+      specific_dates date[],
       is_open boolean not null default true,
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now(),
-      constraint package_availability_capacity_chk check (capacity >= 0),
-      constraint package_availability_remaining_chk check (remaining >= 0 and remaining <= capacity),
-      constraint package_availability_unique unique(package_id, available_date)
+      constraint package_availability_type_chk check (availability_type in ('always','date_range','specific_dates','always_except'))
     );
 
     create index if not exists package_availability_package_id_idx on public.package_availability(package_id);
-    create index if not exists package_availability_available_date_idx on public.package_availability(available_date);
 
     create table if not exists public.bookings (
       id uuid primary key default gen_random_uuid(),

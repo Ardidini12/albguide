@@ -147,20 +147,10 @@ export function PackageDetailsPage() {
     setMediaIndex(0);
   }, [pkg?.id]);
 
-  useEffect(() => {
-    if (isVideo) {
-      const el = videoRef.current;
-      if (!el) return;
-      try {
-        el.currentTime = 0;
-        const p = el.play();
-        if (p && typeof (p as Promise<void>).catch === 'function') {
-          (p as Promise<void>).catch(() => {});
-        }
-      } catch {
-      }
-    }
-  }, [isVideo, currentUrl]);
+  const goNext = () => {
+    if (mediaUrls.length <= 1) return;
+    setMediaIndex((prev) => (prev + 1) % mediaUrls.length);
+  };
 
   const submitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,6 +256,9 @@ export function PackageDetailsPage() {
                       autoPlay
                       muted
                       playsInline
+                      onEnded={() => {
+                        if (mediaUrls.length > 1) goNext();
+                      }}
                       className="w-full h-full object-contain bg-black"
                     />
                   ) : (

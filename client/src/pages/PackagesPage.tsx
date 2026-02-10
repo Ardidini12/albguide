@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../services/api';
 
@@ -35,6 +35,9 @@ export function PackagesPage() {
   const [items, setItems] = useState<PackageRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeMediaIndexById, setActiveMediaIndexById] = useState<Record<string, number>>({});
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const load = async () => {
     setError(null);
@@ -56,6 +59,34 @@ export function PackagesPage() {
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   }, [items]);
+
+  const pauseAndReset = (el: HTMLVideoElement | null) => {
+    if (!el) return;
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch {
+    }
+  };
+
+  const playPreview = (id: string) => {
+    for (const [otherId, otherEl] of Object.entries(videoRefs.current)) {
+      if (otherId !== id) pauseAndReset(otherEl);
+    }
+
+    const el = videoRefs.current[id];
+    if (!el) return;
+
+    try {
+      el.muted = true;
+      el.currentTime = 0;
+      const p = el.play();
+      if (p && typeof (p as Promise<void>).catch === 'function') {
+        (p as Promise<void>).catch(() => {});
+      }
+    } catch {
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,27 +112,57 @@ export function PackagesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {sorted.map((p) => {
               const media = Array.isArray(p.media_urls) ? p.media_urls.filter(Boolean) : [];
-              const cover = media[0] || '';
+              const activeIndex = Math.min(activeMediaIndexById[p.id] ?? 0, Math.max(media.length - 1, 0));
+              const activeUrl = media[activeIndex] || '';
               const price = formatPrice(p.price ?? null, p.currency);
+
+              const setIndex = (next: number) => {
+                if (media.length <= 1) return;
+                const safe = ((next % media.length) + media.length) % media.length;
+                setActiveMediaIndexById((prev) => ({ ...prev, [p.id]: safe }));
+
+                const nextUrl = media[safe] || '';
+                if (hoveredId === p.id && nextUrl && isVideoUrl(nextUrl)) {
+                  window.setTimeout(() => playPreview(p.id), 0);
+                }
+              };
+
+              const onControlClick = (e: MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+              };
+
               return (
                 <Link
                   key={p.id}
                   to={`/packages/${p.slug}`}
                   className="group rounded-2xl overflow-hidden border bg-white hover:shadow-lg transition-shadow"
+                  onMouseEnter={() => {
+                    setHoveredId(p.id);
+                    if (activeUrl && isVideoUrl(activeUrl)) playPreview(p.id);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredId((prev) => (prev === p.id ? null : prev));
+                    pauseAndReset(videoRefs.current[p.id]);
+                  }}
                 >
                   <div className="relative h-56 bg-gray-100 overflow-hidden">
-                    {cover ? (
-                      isVideoUrl(cover) ? (
+                    {activeUrl ? (
+                      isVideoUrl(activeUrl) ? (
                         <video
-                          src={cover}
+                          key={activeUrl}
+                          ref={(el) => {
+                            videoRefs.current[p.id] = el;
+                          }}
+                          src={activeUrl}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          muted
                           playsInline
-                          preload="metadata"
+                          preload="none"
+                          muted
                         />
                       ) : (
                         <img
-                          src={cover}
+                          src={activeUrl}
                           alt={p.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           loading="lazy"
@@ -114,6 +175,52 @@ export function PackagesPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         loading="lazy"
                       />
+                    )}
+
+                    {media.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Previous media"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white hover:bg-black/55 flex items-center justify-center"
+                          onClick={(e) => {
+                            onControlClick(e);
+                            setIndex(activeIndex - 1);
+                          }}
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Next media"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white hover:bg-black/55 flex items-center justify-center"
+                          onClick={(e) => {
+                            onControlClick(e);
+                            setIndex(activeIndex + 1);
+                          }}
+                        >
+                          ›
+                        </button>
+
+                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                          {media.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              aria-label={`Go to media ${idx + 1}`}
+                              className={
+                                idx === activeIndex
+                                  ? 'h-2 w-2 rounded-full bg-white'
+                                  : 'h-2 w-2 rounded-full bg-white/60 hover:bg-white/80'
+                              }
+                              onClick={(e) => {
+                                onControlClick(e);
+                                setIndex(idx);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
 
