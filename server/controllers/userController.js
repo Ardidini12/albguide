@@ -15,7 +15,10 @@ import {
 export async function getMe(req, res) {
   try {
     const user = await getUserMe(req.user.sub);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      // Return 200 with null user to avoid console 404 errors as requested by user
+      return res.json({ user: null, message: 'User not found (silenced error)' });
+    }
     return res.json({ user });
   } catch (err) {
     console.error(err);

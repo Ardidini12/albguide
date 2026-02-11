@@ -1,6 +1,7 @@
 import { verifyToken } from '../services/jwtService.js';
+import { findUserById } from '../models/userModel.js';
 
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return next();
@@ -10,7 +11,12 @@ export function optionalAuth(req, res, next) {
 
   try {
     const payload = verifyToken(token);
-    req.user = payload;
+    
+    // Core fix: verify user actually exists in DB
+    const user = await findUserById(payload.sub);
+    if (user) {
+      req.user = payload;
+    }
   } catch {
   }
 

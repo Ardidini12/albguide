@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Albania Guide API');
+  res.status(200).send('Albania Guide API');
 });
 
 const api = express.Router();
