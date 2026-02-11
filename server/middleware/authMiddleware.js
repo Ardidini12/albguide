@@ -1,6 +1,7 @@
 import { verifyToken } from '../services/jwtService.js';
+import { findUserById } from '../models/userModel.js';
 
-export function authRequired(req, res, next) {
+export async function authRequired(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Missing Authorization header' });
@@ -10,6 +11,13 @@ export function authRequired(req, res, next) {
 
   try {
     const payload = verifyToken(token);
+    
+    // Core fix: verify user actually exists in DB to prevent zombie-token FK errors
+    const user = await findUserById(payload.sub);
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid session: user no longer exists' });
+    }
+
     req.user = payload;
     return next();
   } catch (err) {

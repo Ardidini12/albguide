@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -7,7 +7,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const ALBANIA_IMAGES = [
  {
-  url: 'https://images.unsplash.com/photo-1733413182592-b0e7a489256d?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1733413182592-b0e7a489256d?q=80&w=1331&auto=format&fit=crop',
   title: 'THE ALPS',
   description: 'Breathtaking peaks and traditional stone houses in the heart of the Albanian Alps.',
  },
@@ -17,7 +17,7 @@ const ALBANIA_IMAGES = [
   description: 'Crystal clear emerald waters and pristine white beaches along the Ionian Sea.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1705405999485-188af37e0462?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1705405999485-188af37e0462?q=80&w=1171&auto=format&fit=crop',
   title: 'BERAT',
   description: 'The city of a thousand windows, a UNESCO World Heritage site standing for centuries.',
  },
@@ -27,32 +27,32 @@ const ALBANIA_IMAGES = [
   description: 'The stone city, home to one of the Balkans most impressive citadels.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1665758362878-beff3f919a2b?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1665758362878-beff3f919a2b?q=80&w=1331&auto=format&fit=crop',
   title: 'SARANDE',
   description: 'The capital of the Riviera, where modern life meets ancient ruins.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1642886387324-9f733b0d81c1?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1642886387324-9f733b0d81c1?q=80&w=735&auto=format&fit=crop',
   title: 'BLUE EYE',
   description: 'A magical natural spring of deep blue water that seems bottomless.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1742500481926-f61a4be9abfe?q=80&w=1082&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1742500481926-f61a4be9abfe?q=80&w=1082&auto=format&fit=crop',
   title: 'TIRANA',
   description: 'The colorful heart of Albania, a city that never sleeps.',
  },
  {
-  url: 'https://lh3.googleusercontent.com/gps-cs-s/AHVAwerpM2XdyJmdNr0xHXTJKBUxXs0CH858ijr_ZftHUcfBMIESYl1xcfrfgy8astDqRY4OFKIHYbMte8vHawaCX_5itozR0Hg2MeoQ7jqipsgP5MpmNs3cZXbDYS_7CieE6y0uIu7nNg=s1360-w1360-h1020-rw',
-  title: 'TRIAL OF COLOURS',
-  description: 'A vibrant celebration of nature and culture set in the stunning landscapes of Kukës.',
+  url: 'https://kukesadventures.com/wp-content/uploads/2025/02/FullSizeRender3-2048x1152.jpg',
+  title: 'TRAIL OF COLORS',
+  description: 'A stunning fusion of alpine splendor and authentic highland culture in scenic Kukës.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1724160705736-cfe2d1de6051?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1724160705736-cfe2d1de6051?q=80&w=1332&auto=format&fit=crop',
   title: 'HIMARE',
   description: 'Authentic coastal charm with some of the best olive oil in the Mediterranean.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1717607423448-3e78d37cb489?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  url: 'https://images.unsplash.com/photo-1717607423448-3e78d37cb489?q=80&w=687&auto=format&fit=crop',
   title: 'KRUJE',
   description: 'The historic capital of Skanderbeg, guarding the mountains above Tirana.',
  }
@@ -62,7 +62,7 @@ export function PremiumDashboard() {
  const containerRef = useRef<HTMLDivElement>(null);
  const heroRef = useRef<HTMLDivElement>(null);
 
- useEffect(() => {
+ useLayoutEffect(() => {
   const ctx = gsap.context(() => {
    // Kinetic Typography - Slam Entrance
    gsap.from('.kinetic-title', {
@@ -212,10 +212,10 @@ export function PremiumDashboard() {
          className="w-full h-full object-cover saturate-[1.1] brightness-[0.7] group-hover:scale-110 group-hover:rotate-1 transition-transform duration-1000 ease-out"
         />
        </div>
-       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
-       <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-        <h3 className="text-3xl font-black italic uppercase leading-none mb-2">{image.title}</h3>
-        <p className="text-sm font-medium text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 line-clamp-2">
+       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-90"></div>
+       <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+        <h3 className="text-3xl font-black italic uppercase leading-none mb-2 text-white">{image.title}</h3>
+        <p className="text-sm font-medium text-zinc-300 opacity-60 group-hover:opacity-100 transition-opacity duration-500 delay-100 line-clamp-2">
          {image.description}
         </p>
        </div>
