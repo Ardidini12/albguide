@@ -9,16 +9,20 @@ export function Footer() {
   const footerRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
-    gsap.from(footerRef.current, {
-      opacity: 0,
-      y: 50,
-      duration: 1.5,
-      ease: 'power4.out',
-      scrollTrigger: {
-        trigger: footerRef.current,
-        start: 'top 95%',
-      },
-    });
+    const ctx = gsap.context(() => {
+      gsap.from(footerRef.current, {
+        opacity: 0,
+        y: 50,
+        duration: 1.5,
+        ease: 'power4.out',
+        scrollTrigger: {
+          trigger: footerRef.current,
+          start: 'top 95%',
+        },
+      });
+    }, footerRef);
+
+    return () => ctx.revert();
   }, []);
 
   return (

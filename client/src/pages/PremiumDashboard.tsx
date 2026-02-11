@@ -42,7 +42,7 @@ const ALBANIA_IMAGES = [
   description: 'The colorful heart of Albania, a city that never sleeps.',
  },
  {
-  url: 'https://kukesadventures.com/wp-content/uploads/2025/02/FullSizeRender3-2048x1152.jpg',
+  url: 'https://images.unsplash.com/photo-1542385152-45601d51c416?q=80&w=1470&auto=format&fit=crop',
   title: 'TRAIL OF COLORS',
   description: 'A stunning fusion of alpine splendor and authentic highland culture in scenic Kukës.',
  },
@@ -209,6 +209,9 @@ export function PremiumDashboard() {
         <img
          src={image.url}
          alt={image.title}
+         onError={(e) => {
+          e.currentTarget.src = 'https://images.unsplash.com/photo-1596436889106-be35e843f974?auto=format&fit=crop&q=80&w=1600';
+         }}
          className="w-full h-full object-cover saturate-[1.1] brightness-[0.7] group-hover:scale-110 group-hover:rotate-1 transition-transform duration-1000 ease-out"
         />
        </div>

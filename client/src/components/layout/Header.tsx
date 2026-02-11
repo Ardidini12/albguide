@@ -99,7 +99,7 @@ export function Header() {
   }, []);
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2l">
+    <header ref={headerRef} className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-2xl">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3 group">

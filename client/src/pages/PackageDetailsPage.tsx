@@ -98,6 +98,7 @@ export function PackageDetailsPage() {
   const [infants, setInfants] = useState<number | ''>('');
   const [note, setNote] = useState('');
   const [bookingMsg, setBookingMsg] = useState<string | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
   const mediaUrls = useMemo(() => {
@@ -137,6 +138,7 @@ export function PackageDetailsPage() {
         setFavorite(null);
       }
     } catch (e) {
+      // console.error(e); // Log the error for debugging
       setError((e as Error).message);
     } finally {
       setLoading(false);
@@ -199,6 +201,16 @@ export function PackageDetailsPage() {
     return () => window.clearInterval(id);
   }, [isVideo, mediaUrls.length, mediaIndex, currentUrl]);
 
+  const handleDateSelect = (
+    selected: Date | Date[] | { from: Date; to?: Date | undefined } | undefined
+  ) => {
+    if (selected === undefined) {
+      setDateRange(undefined);
+    } else if ('from' in selected) {
+      setDateRange(selected);
+    }
+  };
+
   const submitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pkg) return;
@@ -228,7 +240,9 @@ export function PackageDetailsPage() {
       });
 
       setBookingMsg(`Booking created. Status: ${String(data.booking?.status || '')}`);
+      setBookingSuccess(true);
     } catch (e2) {
+      setBookingSuccess(false);
       setBookingMsg((e2 as Error).message);
     } finally {
       setBookingLoading(false);
@@ -263,7 +277,7 @@ export function PackageDetailsPage() {
       <div className="bg-black min-h-screen">
         <div className="max-w-6xl mx-auto px-4 py-20 text-center">
           <div className="inline-block px-6 py-4 rounded-2xl border border-red-900/30 bg-red-950/20 text-red-500 font-bold italic">
-            Error: {error}
+            Error: An unexpected error occurred. Please try again later.
           </div>
           <div className="mt-10">
             <Link to="/packages" className="text-sm font-black uppercase italic tracking-widest text-zinc-400 hover:text-white transition-colors">
@@ -546,7 +560,7 @@ export function PackageDetailsPage() {
                           availability={availability}
                           mode="range"
                           selectedDates={dateRange}
-                          onDateSelect={(range) => setDateRange(range as { from: Date; to?: Date } | undefined)}
+                          onDateSelect={handleDateSelect}
                           showInstructions={false}
                         />
                       </div>
@@ -564,14 +578,15 @@ export function PackageDetailsPage() {
 
                   <form onSubmit={submitBooking} className="mt-10 space-y-4">
                     {bookingMsg && (
-                      <div className={`p-4 rounded-2xl text-xs font-bold leading-relaxed border ${bookingMsg.includes('created') ? 'bg-green-600/10 border-green-600/20 text-green-500' : 'bg-red-600/10 border-red-600/20 text-red-500'}`}>
+                      <div className={`p-4 rounded-2xl text-xs font-bold leading-relaxed border ${bookingSuccess ? 'bg-green-600/10 border-green-600/20 text-green-500' : 'bg-red-600/10 border-red-600/20 text-red-500'}`}>
                         {bookingMsg}
                       </div>
                     )}
 
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest ml-4">Full Name</label>
+                      <label htmlFor="fullName" className="text-[9px] font-black uppercase text-zinc-500 tracking-widest ml-4">Full Name</label>
                       <input
+                        id="fullName"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         className="w-full h-12 rounded-2xl bg-zinc-900/50 border border-white/5 px-6 text-sm font-bold focus:border-red-600 focus:bg-zinc-900 transition-all"
@@ -581,8 +596,9 @@ export function PackageDetailsPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest ml-4">WhatsApp</label>
+                      <label htmlFor="whatsapp" className="text-[9px] font-black uppercase text-zinc-500 tracking-widest ml-4">WhatsApp</label>
                       <input
+                        id="whatsapp"
                         value={whatsapp}
                         onChange={(e) => setWhatsapp(e.target.value)}
                         className="w-full h-12 rounded-2xl bg-zinc-900/50 border border-white/5 px-6 text-sm font-bold focus:border-red-600 focus:bg-zinc-900 transition-all"
@@ -593,30 +609,42 @@ export function PackageDetailsPage() {
 
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5 text-center">
-                        <label className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Adults</label>
+                        <label htmlFor="adults" className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Adults</label>
                         <input
+                          id="adults"
                           value={adults}
-                          onChange={(e) => setAdults(e.target.value === '' ? '' : Number(e.target.value))}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                            setAdults(v);
+                          }}
                           className="w-full h-12 rounded-2xl bg-zinc-900/50 border border-white/5 px-0 text-center text-sm font-black focus:border-red-600 transition-all"
                           type="number"
                           min={0}
                         />
                       </div>
                       <div className="space-y-1.5 text-center">
-                        <label className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Kids</label>
+                        <label htmlFor="children" className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Kids</label>
                         <input
+                          id="children"
                           value={children}
-                          onChange={(e) => setChildren(e.target.value === '' ? '' : Number(e.target.value))}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                            setChildren(v);
+                          }}
                           className="w-full h-12 rounded-2xl bg-zinc-900/50 border border-white/5 px-0 text-center text-sm font-black focus:border-red-600 transition-all"
                           type="number"
                           min={0}
                         />
                       </div>
                       <div className="space-y-1.5 text-center">
-                        <label className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Infants</label>
+                        <label htmlFor="infants" className="text-[8px] font-black uppercase text-zinc-600 tracking-widest">Infants</label>
                         <input
+                          id="infants"
                           value={infants}
-                          onChange={(e) => setInfants(e.target.value === '' ? '' : Number(e.target.value))}
+                          onChange={(e) => {
+                            const v = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                            setInfants(v);
+                          }}
                           className="w-full h-12 rounded-2xl bg-zinc-900/50 border border-white/5 px-0 text-center text-sm font-black focus:border-red-600 transition-all"
                           type="number"
                           min={0}
