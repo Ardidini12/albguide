@@ -178,7 +178,7 @@ export function DestinationsDetailsPage() {
                       <button
                         type="button"
                         onClick={goPrev}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 rounded-full w-12 h-12 bg-black/40 backdrop-blur-xl text-white flex items-center justify-center border border-white/10 hover:bg-purple-600 hover:border-purple-600 transition-all opacity-0 group-hover/media:opacity-100"
+                        className="absolute left-6 top-1/2 -translate-y-1/2 rounded-full w-12 h-12 bg-black/40 backdrop-blur-xl text-white flex items-center justify-center border border-white/10 hover:bg-purple-600 hover:border-purple-600 transition-all opacity-0 group-hover/media:opacity-100 focus:opacity-100"
                         aria-label="Previous media"
                       >
                         ←
@@ -186,7 +186,7 @@ export function DestinationsDetailsPage() {
                       <button
                         type="button"
                         onClick={goNext}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 rounded-full w-12 h-12 bg-black/40 backdrop-blur-xl text-white flex items-center justify-center border border-white/10 hover:bg-purple-600 hover:border-purple-600 transition-all opacity-0 group-hover/media:opacity-100"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 rounded-full w-12 h-12 bg-black/40 backdrop-blur-xl text-white flex items-center justify-center border border-white/10 hover:bg-purple-600 hover:border-purple-600 transition-all opacity-0 group-hover/media:opacity-100 focus:opacity-100"
                         aria-label="Next media"
                       >
                         →
@@ -293,7 +293,7 @@ export function DestinationsDetailsPage() {
 
                   <Link
                     to={`/packages?destination=${destination.id}`}
-                    className="block w-full h-14 rounded-2xl bg-purple-600 text-white text-xs font-black uppercase italic tracking-[0.2em] shadow-[0_0_30px_rgba(147,51,234,0.3)] flex items-center justify-center hover:scale-[1.02] hover:bg-black hover:text-purple-500 hover:border hover:border-purple-600 transition-all duration-300"
+                    className="w-full h-14 rounded-2xl bg-purple-600 text-white text-xs font-black uppercase italic tracking-[0.2em] shadow-[0_0_30px_rgba(147,51,234,0.3)] flex items-center justify-center border border-transparent hover:scale-[1.02] hover:bg-black hover:text-purple-500 hover:border-purple-600 transition-all duration-300"
                   >
                     View Packages
                   </Link>

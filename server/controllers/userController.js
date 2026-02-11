@@ -16,8 +16,8 @@ export async function getMe(req, res) {
   try {
     const user = await getUserMe(req.user.sub);
     if (!user) {
-      // Return 200 with null user to avoid console 404 errors as requested by user
-      return res.json({ user: null, message: 'User not found (silenced error)' });
+      console.warn(`[getMe] User not found for ID: ${req.user.sub}`);
+      return res.status(404).json({ message: 'User not found' });
     }
     return res.json({ user });
   } catch (err) {

@@ -63,8 +63,9 @@ export function LoginPage() {
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Email Address</label>
+              <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Email Address</label>
               <input
+                id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white focus:border-red-600 transition-colors outline-none"
@@ -73,8 +74,9 @@ export function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Password</label>
+              <label htmlFor="password" className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Password</label>
               <input
+                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white focus:border-red-600 transition-colors outline-none"

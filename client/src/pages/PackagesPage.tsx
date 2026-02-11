@@ -63,10 +63,10 @@ export function PackagesPage() {
   }, []);
 
   useLayoutEffect(() => {
-    if (loading || items.length === 0) return;
+    if (loading) return;
 
     const ctx = gsap.context(() => {
-      // Hero Animation
+      // Hero Animation - always runs when loading is false
       if (heroRef.current) {
         gsap.from(heroRef.current.children, {
           opacity: 0,
@@ -77,22 +77,24 @@ export function PackagesPage() {
         });
       }
 
-      // Grid Animation
-      const cards = gsap.utils.toArray('.package-card');
-      if (cards.length > 0) {
-        gsap.from(cards, {
-          opacity: 0,
-          y: 60,
-          scale: 0.95,
-          stagger: 0.1,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.package-grid',
-            start: 'top 85%',
-            toggleActions: 'play none none none',
-          }
-        });
+      // Grid Animation - only runs if there are items
+      if (items.length > 0) {
+        const cards = gsap.utils.toArray('.package-card');
+        if (cards.length > 0) {
+          gsap.from(cards, {
+            opacity: 0,
+            y: 60,
+            scale: 0.95,
+            stagger: 0.1,
+            duration: 1,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: '.package-grid',
+              start: 'top 85%',
+              toggleActions: 'play none none none',
+            }
+          });
+        }
       }
 
       ScrollTrigger.refresh();
