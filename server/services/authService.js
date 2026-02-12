@@ -1,12 +1,17 @@
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { signToken } from './jwtService.js';
 import { createUser, findUserByEmailWithPassword } from '../models/userModel.js';
+import { notifyAdmins } from './notificationService.js';
 
 const DUMMY_PASSWORD_HASH = 'scrypt:00000000000000000000000000000000:0000000000000000000000000000000000000000000000000000000000000000';
 
 export async function registerUser({ email, password, name }) {
   const passwordHash = await hashPassword(password);
   const user = await createUser({ email, passwordHash, name, isAdmin: false });
+  
+  // Notify admins
+  notifyAdmins('New User', `New user registered: ${name || email}`, 'new_user', { userId: user.id });
+
   const token = signToken({ sub: user.id, email: user.email, is_admin: user.is_admin });
   return { token, user };
 }

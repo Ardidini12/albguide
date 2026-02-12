@@ -31,6 +31,13 @@ export async function listUsers() {
   return result.rows;
 }
 
+export async function listAdmins() {
+  const result = await pool.query(
+    'select id, email, name, profile_picture, is_admin, created_at from public.users where is_admin=true'
+  );
+  return result.rows;
+}
+
 export async function deleteUserById(id) {
   const result = await pool.query('delete from public.users where id=$1 returning id', [id]);
   return result.rows[0]?.id || null;

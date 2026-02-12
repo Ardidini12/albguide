@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { gsap } from 'gsap';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import { profilePictureEvents } from '../utils/profilePictureEvents';
@@ -15,6 +16,8 @@ type UserData = {
 export function UserProfilePage() {
   const { token } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,7 +190,6 @@ export function UserProfilePage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      // Emit the new profile picture URL
       if (userData?.profile_picture) {
         profilePictureEvents.emit(userData.profile_picture);
       }
@@ -199,172 +201,225 @@ export function UserProfilePage() {
     }
   };
 
+
+  useLayoutEffect(() => {
+    if (!user) return;
+    const ctx = gsap.context(() => {
+      // Title
+      gsap.from('.kinetic-header', {
+        y: -50, opacity: 0, duration: 1, ease: 'power4.out'
+      });
+
+      // Cards
+      gsap.from('.profile-card', {
+        y: 100,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+        delay: 0.3
+      });
+
+      // Inputs
+      gsap.from('.input-group', {
+        x: -20, opacity: 0, duration: 0.5, stagger: 0.05, delay: 0.6
+      });
+
+    }, containerRef);
+    return () => ctx.revert();
+  }, [user]);
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="bg-white border rounded-2xl p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-          <p className="mt-1 text-gray-600">Manage your account settings</p>
+    <div ref={containerRef} className="bg-black min-h-screen pt-24 pb-12 px-4 selection:bg-red-600 font-sans">
+      <div className="max-w-4xl mx-auto">
+        <div className="kinetic-header mb-12 text-center md:text-left">
+          <h1 className="text-5xl md:text-7xl font-black italic uppercase text-white tracking-tighter mb-4">
+            My <span className="text-red-600">Profile</span>
+          </h1>
+          <p className="text-xl text-zinc-400 border-l-4 border-red-600 pl-6 max-w-2xl">
+            Manage your personal travel identity.
+          </p>
+        </div>
 
-          {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-900/50 bg-red-950/30 px-6 py-4 text-sm font-bold text-red-200 animate-pulse">
+            {error}
+          </div>
+        )}
 
-          {successMsg && (
-            <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-              {successMsg}
-            </div>
-          )}
+        {successMsg && (
+          <div className="mb-6 rounded-xl border border-green-900/50 bg-green-950/30 px-6 py-4 text-sm font-bold text-green-200">
+            {successMsg}
+          </div>
+        )}
 
-          {loading && !user ? (
-            <div className="mt-6 text-gray-600">Loading…</div>
-          ) : user ? (
-            <div className="mt-6 space-y-8">
-              <div className="rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h2>
-                <div className="flex items-center gap-6">
-                  <div 
-                    className="w-24 h-24 rounded-full bg-gray-100 border-2 flex items-center justify-center text-3xl font-semibold text-gray-800 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => user.profile_picture && setShowImageModal(true)}
-                    title={user.profile_picture ? 'Click to view full size' : ''}
-                  >
-                    {user.profile_picture ? (
-                      <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      user.email.slice(0, 1).toUpperCase()
+        {loading && !user ? (
+          <div className="text-center py-20">
+            <div className="text-2xl font-black text-zinc-700 uppercase animate-pulse">Loading Profile...</div>
+          </div>
+        ) : user ? (
+          <div className="space-y-8">
+            {/* Profile Picture Section */}
+            <div className="profile-card bg-zinc-900 border border-white/10 rounded-3xl p-8 hover:border-red-600/30 transition-colors">
+              <h2 className="text-2xl font-black italic uppercase text-white mb-8 border-b border-white/5 pb-4">Identity</h2>
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div
+                  className="relative group w-32 h-32 rounded-full border-4 border-zinc-800 bg-black overflow-hidden flex items-center justify-center cursor-pointer shadow-2xl"
+                  onClick={() => user.profile_picture && setShowImageModal(true)}
+                >
+                  {user.profile_picture ? (
+                    <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  ) : (
+                    <span className="text-5xl font-black text-zinc-700 select-none">
+                      {user.email.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  {user.profile_picture && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <span className="text-xs font-bold text-white uppercase tracking-widest">View</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex flex-col md:flex-row gap-4 justify-center md:justify-start">
+                    <label className="group relative inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-black uppercase tracking-widest text-xs hover:bg-gray-200 cursor-pointer transition-all hover:scale-105 active:scale-95">
+                      {uploadingPic ? 'Uploading...' : 'Change Picture'}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfilePicChange}
+                        disabled={uploadingPic}
+                      />
+                    </label>
+                    {user.profile_picture && (
+                      <button
+                        onClick={handleRemoveProfilePicture}
+                        disabled={uploadingPic}
+                        className="px-6 py-3 rounded-full border border-red-900/50 text-red-500 font-bold uppercase tracking-widest text-xs hover:bg-red-950/30 transition-colors"
+                      >
+                        Remove
+                      </button>
                     )}
                   </div>
-                  <div>
-                    <div className="flex gap-2">
-                      <label className="inline-flex items-center px-4 py-2 rounded-md border bg-white text-sm hover:bg-gray-50 cursor-pointer">
-                        {uploadingPic ? 'Uploading...' : 'Change Picture'}
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleProfilePicChange}
-                          disabled={uploadingPic}
-                        />
-                      </label>
-                      {user.profile_picture && (
-                        <button
-                          onClick={handleRemoveProfilePicture}
-                          disabled={uploadingPic}
-                          className="px-4 py-2 rounded-md border border-red-300 text-red-700 text-sm hover:bg-red-50 disabled:opacity-50"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">JPG, PNG or GIF. Max 5MB.</p>
+                  <p className="mt-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                    JPG, PNG or GIF • Max 5MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Info */}
+            <div className="profile-card bg-zinc-900 border border-white/10 rounded-3xl p-8 hover:border-red-600/30 transition-colors">
+              <h2 className="text-2xl font-black italic uppercase text-white mb-8 border-b border-white/5 pb-4">Personal Details</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 input-group">
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Email Address</div>
+                  <div className="text-lg font-bold text-white font-mono">{user.email}</div>
+                </div>
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Member Since</div>
+                  <div className="text-lg font-bold text-white font-mono">
+                    {new Date(user.created_at).toLocaleDateString()}
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <div className="text-sm text-gray-500">Email</div>
-                    <div className="mt-1 font-medium text-gray-900">{user.email}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Member Since</div>
-                    <div className="mt-1 font-medium text-gray-900">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                <div className="input-group">
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Display Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-red-600 focus:outline-none transition-colors placeholder-zinc-700"
+                    placeholder="Enter your name"
+                  />
                 </div>
-
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="mt-1 w-full rounded-md border px-3 py-2"
-                      placeholder="Your name"
-                    />
-                  </div>
+                <div className="flex justify-end pt-4">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 rounded-md bg-red-700 text-white text-sm hover:bg-red-600 disabled:opacity-50"
+                    className="input-group px-8 py-4 bg-red-600 text-white font-black uppercase italic tracking-widest rounded-full hover:bg-red-700 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_10px_30px_rgba(220,38,38,0.3)]"
                   >
-                    {loading ? 'Saving...' : 'Save Changes'}
+                    {loading ? 'Saving...' : 'Update Profile'}
                   </button>
-                </form>
-              </div>
+                </div>
+              </form>
+            </div>
 
-              <div className="rounded-xl border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Current Password</label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="mt-1 w-full rounded-md border px-3 py-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">New Password</label>
+            {/* Security */}
+            <div className="profile-card bg-zinc-900 border border-white/10 rounded-3xl p-8 hover:border-red-600/30 transition-colors">
+              <h2 className="text-2xl font-black italic uppercase text-white mb-8 border-b border-white/5 pb-4">Security</h2>
+              <form onSubmit={handleChangePassword} className="space-y-6">
+                <div className="input-group">
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-red-600 focus:outline-none transition-colors placeholder-zinc-700"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="input-group">
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">New Password</label>
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="mt-1 w-full rounded-md border px-3 py-2"
+                      className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-red-600 focus:outline-none transition-colors placeholder-zinc-700"
                       required
                       minLength={6}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                  <div className="input-group">
+                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Confirm New Password</label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="mt-1 w-full rounded-md border px-3 py-2"
+                      className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-red-600 focus:outline-none transition-colors placeholder-zinc-700"
                       required
                       minLength={6}
                     />
                   </div>
+                </div>
+                <div className="flex justify-end pt-4">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 rounded-md bg-red-700 text-white text-sm hover:bg-red-600 disabled:opacity-50"
+                    className="input-group px-8 py-4 border border-white/20 text-white font-black uppercase italic tracking-widest rounded-full hover:bg-white hover:text-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Changing...' : 'Change Password'}
+                    {loading ? 'Updating...' : 'Change Password'}
                   </button>
-                </form>
-              </div>
+                </div>
+              </form>
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {showImageModal && user?.profile_picture && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300"
           onClick={() => setShowImageModal(false)}
         >
-          <div className="relative max-w-4xl max-h-[90vh]">
+          <div className="relative max-w-5xl max-h-[90vh]">
             <button
               onClick={() => setShowImageModal(false)}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold"
+              className="absolute -top-12 right-0 text-white/50 hover:text-white text-xl font-black uppercase tracking-widest transition-colors"
             >
-              ✕
+              Close [ESC]
             </button>
-            <img 
-              src={user.profile_picture} 
-              alt="Profile" 
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            <img
+              src={user.profile_picture}
+              alt="Profile"
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/10"
               onClick={(e) => e.stopPropagation()}
             />
           </div>

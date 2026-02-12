@@ -77,23 +77,32 @@ export function DestinationsPage() {
       if (destinations.length > 0) {
         const cards = gsap.utils.toArray('.destination-card');
         if (cards.length > 0) {
-          gsap.from(cards, {
-            opacity: 0,
-            y: 60,
-            scale: 0.95,
-            stagger: 0.1,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: '.destination-grid',
-              start: 'top 85%',
-              toggleActions: 'play none none none',
+          gsap.fromTo(cards,
+            {
+              opacity: 0,
+              y: 60,
+              scale: 0.95,
+            },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              stagger: 0.1,
+              duration: 1,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: '.destination-grid',
+                start: 'top 85%',
+                toggleActions: 'play none none reverse',
+              }
             }
-          });
+          );
         }
       }
 
-      ScrollTrigger.refresh();
+      // Ensure ScrollTrigger refreshes after layout changes
+      setTimeout(() => ScrollTrigger.refresh(), 100);
+
     }, containerRef);
 
     return () => ctx.revert();

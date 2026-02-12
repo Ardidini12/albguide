@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { gsap } from 'gsap';
+
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -35,10 +37,20 @@ export function UserDashboard() {
     };
   }, [token]);
 
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.dashboard-card',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }
+      );
+    });
+    return () => ctx.revert();
+  }, [me]);
+
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="bg-white border rounded-2xl p-6 shadow-sm">
+        <div className="dashboard-card bg-white border rounded-2xl p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900">User Dashboard</h1>
           <p className="mt-1 text-gray-600">Welcome{user?.email ? `, ${user.email}` : ''}.</p>
 
@@ -51,38 +63,38 @@ export function UserDashboard() {
           {me && (
             <>
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-xl border p-4">
-                  <div className="text-sm text-gray-500">Email</div>
-                  <div className="mt-1 font-semibold text-gray-900">{me.email}</div>
+                <div className="dashboard-card rounded-xl border p-4 hover:shadow-md transition-shadow">
+                  <div className="text-sm font-medium text-gray-500">Email</div>
+                  <div className="mt-1 font-bold text-gray-900">{me.email}</div>
                 </div>
-                <div className="rounded-xl border p-4">
-                  <div className="text-sm text-gray-500">Name</div>
-                  <div className="mt-1 font-semibold text-gray-900">{me.name || '—'}</div>
+                <div className="dashboard-card rounded-xl border p-4 hover:shadow-md transition-shadow">
+                  <div className="text-sm font-medium text-gray-500">Name</div>
+                  <div className="mt-1 font-bold text-gray-900">{me.name || '—'}</div>
                 </div>
               </div>
 
               <div className="mt-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
+                <h2 className="dashboard-card text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Link
                     to="/user/bookings"
-                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                    className="dashboard-card rounded-xl border p-4 hover:bg-gray-50 hover:border-purple-200 transition-all group"
                   >
-                    <div className="font-semibold text-gray-900">My Bookings</div>
+                    <div className="font-bold text-gray-900 group-hover:text-purple-700">My Bookings</div>
                     <div className="mt-1 text-sm text-gray-600">View and manage your bookings</div>
                   </Link>
                   <Link
                     to="/user/favorites"
-                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                    className="dashboard-card rounded-xl border p-4 hover:bg-gray-50 hover:border-purple-200 transition-all group"
                   >
-                    <div className="font-semibold text-gray-900">My Favorites</div>
+                    <div className="font-bold text-gray-900 group-hover:text-purple-700">My Favorites</div>
                     <div className="mt-1 text-sm text-gray-600">Saved packages</div>
                   </Link>
                   <Link
                     to="/user/reviews"
-                    className="rounded-xl border p-4 hover:bg-gray-50 transition-colors"
+                    className="dashboard-card rounded-xl border p-4 hover:bg-gray-50 hover:border-purple-200 transition-all group"
                   >
-                    <div className="font-semibold text-gray-900">My Reviews</div>
+                    <div className="font-bold text-gray-900 group-hover:text-purple-700">My Reviews</div>
                     <div className="mt-1 text-sm text-gray-600">Manage your reviews and media</div>
                   </Link>
                 </div>

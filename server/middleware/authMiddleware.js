@@ -27,3 +27,24 @@ export async function authRequired(req, res, next) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 }
+
+export async function optionalAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = header.slice('Bearer '.length);
+
+  try {
+    const payload = verifyToken(token);
+    const user = await findUserById(payload.sub);
+    if (user) {
+      req.user = user;
+    }
+    return next();
+  } catch (err) {
+    // If token invalid, just proceed as guest
+    return next();
+  }
+}

@@ -235,6 +235,37 @@ export async function ensureSchema() {
 
     create index if not exists review_images_review_id_idx on public.review_images(review_id);
     create index if not exists review_images_user_id_idx on public.review_images(user_id);
+
+    create table if not exists public.offers (
+      id uuid primary key default gen_random_uuid(),
+      title text not null,
+      description text,
+      discount_percentage integer,
+      code text unique,
+      valid_from timestamptz,
+      valid_to timestamptz,
+      is_active boolean not null default true,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      constraint offers_discount_chk check (discount_percentage >= 0 and discount_percentage <= 100)
+    );
+
+    create index if not exists offers_is_active_idx on public.offers(is_active);
+    create index if not exists offers_code_idx on public.offers(code);
+
+    create table if not exists public.notifications (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid references public.users(id) on delete cascade,
+      title text not null,
+      message text not null,
+      type text not null,
+      is_read boolean not null default false,
+      metadata jsonb default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    );
+
+    create index if not exists notifications_user_id_idx on public.notifications(user_id);
+    create index if not exists notifications_is_read_idx on public.notifications(is_read);
   `);
 
   if (String(process.env.ENABLE_RLS || '').toLowerCase() === 'true') {
@@ -268,9 +299,29 @@ export async function ensureSchema() {
       alter table public.reviews enable row level security;
       alter table public.review_images enable row level security;
       alter table public.site_content enable row level security;
+      alter table public.offers enable row level security;
+      alter table public.notifications enable row level security;
 
       do $$
       begin
+        if not exists (
+          select 1 from pg_policies where schemaname='public' and tablename='offers' and policyname='offers_public_read_active'
+        ) then
+          execute 'create policy offers_public_read_active on public.offers for select using (is_active = true)';
+        end if;
+
+        if not exists (
+          select 1 from pg_policies where schemaname='public' and tablename='offers' and policyname='offers_admin_all'
+        ) then
+          execute 'create policy offers_admin_all on public.offers for all using (public.request_is_admin()) with check (public.request_is_admin())';
+        end if;
+
+        if not exists (
+          select 1 from pg_policies where schemaname='public' and tablename='notifications' and policyname='notifications_user_read_own'
+        ) then
+          execute 'create policy notifications_user_read_own on public.notifications for select using (public.request_user_id() is not null and user_id = public.request_user_id())';
+        end if;
+
         if not exists (
           select 1 from pg_policies where schemaname='public' and tablename='destinations' and policyname='destinations_public_read_active'
         ) then

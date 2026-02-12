@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { apiFetch, authHeader } from '../../services/api';
 import { profilePictureEvents } from '../../utils/profilePictureEvents';
+import { NotificationBell } from '../NotificationBell';
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -116,59 +117,64 @@ export function Header() {
             <NavItem to="/" label="Home" />
             <NavItem to="/packages" label="Packages" />
             <NavItem to="/services" label="Services" />
+            <NavItem to="/offers" label="Offers" />
             <NavItem to="/destinations" label="Destinations" />
             <NavItem to="/support" label="Support" />
           </nav>
 
           <div className="flex items-center gap-4">
             {user ? (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  className="w-10 h-10 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-sm font-black text-white hover:border-red-600 transition-all overflow-hidden"
-                >
-                  {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    user.email.slice(0, 1).toUpperCase()
+              <>
+                <NotificationBell />
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="w-10 h-10 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-sm font-black text-white hover:border-red-600 transition-all overflow-hidden"
+                  >
+                    {profilePicture ? (
+                      <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      user.email.slice(0, 1).toUpperCase()
+                    )}
+                  </button>
+
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-3 w-64 bg-zinc-950 border border-white/10 rounded-2xl shadow-3xl py-2 z-50 backdrop-blur-3xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="px-4 py-3 border-b border-white/5 bg-white/5">
+                        <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none mb-1">Authenticated As</p>
+                        <p className="text-sm font-bold text-white truncate">{user.email}</p>
+                      </div>
+
+                      <div className="py-2">
+                        {user.isAdmin ? (
+                          <>
+                            <Link to="/user/profile" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Profile</Link>
+                            <div className="h-px bg-white/5 my-2"></div>
+                            <Link to="/admin" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors uppercase tracking-widest text-red-500">Admin Panel</Link>
+                            <Link to="/admin/destinations" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Destinations</Link>
+                            <Link to="/admin/packages" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Packages</Link>
+                            <Link to="/admin/offers" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Offers</Link>
+                            <Link to="/admin/bookings" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Bookings</Link>
+                            <Link to="/admin/reviews" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Reviews</Link>
+                            <Link to="/admin/users" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Users</Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link to="/user/profile" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Profile</Link>
+                            <Link to="/user/bookings" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Bookings</Link>
+                            <Link to="/user/favorites" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Favorites</Link>
+                            <Link to="/user/reviews" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Reviews</Link>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="border-t border-white/5 mt-2">
+                        <button onClick={onLogout} className="block w-full text-left px-4 py-3 text-xs font-black uppercase italic text-red-600 hover:bg-red-600/10 transition-colors">Logout</button>
+                      </div>
+                    </div>
                   )}
-                </button>
-
-                {showDropdown && (
-                  <div className="absolute right-0 mt-3 w-64 bg-zinc-950 border border-white/10 rounded-2xl shadow-3xl py-2 z-50 backdrop-blur-3xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="px-4 py-3 border-b border-white/5 bg-white/5">
-                      <p className="text-[10px] font-black uppercase text-red-600 tracking-widest leading-none mb-1">Authenticated As</p>
-                      <p className="text-sm font-bold text-white truncate">{user.email}</p>
-                    </div>
-
-                    <div className="py-2">
-                      {user.isAdmin ? (
-                        <>
-                          <Link to="/user/profile" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Profile</Link>
-                          <div className="h-px bg-white/5 my-2"></div>
-                          <Link to="/admin" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors uppercase tracking-widest text-red-500">Admin Panel</Link>
-                          <Link to="/admin/destinations" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Destinations</Link>
-                          <Link to="/admin/packages" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Packages</Link>
-                          <Link to="/admin/bookings" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Bookings</Link>
-                          <Link to="/admin/reviews" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Reviews</Link>
-                          <Link to="/admin/users" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Manage Users</Link>
-                        </>
-                      ) : (
-                        <>
-                          <Link to="/user/profile" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Profile</Link>
-                          <Link to="/user/bookings" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Bookings</Link>
-                          <Link to="/user/favorites" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Favorites</Link>
-                          <Link to="/user/reviews" onClick={() => setShowDropdown(false)} className="block px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">My Reviews</Link>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="border-t border-white/5 mt-2">
-                      <button onClick={onLogout} className="block w-full text-left px-4 py-3 text-xs font-black uppercase italic text-red-600 hover:bg-red-600/10 transition-colors">Logout</button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              </>
             ) : (
               <div className="flex gap-2">
                 <Link to="/login" className="px-5 py-2 rounded-full border border-white/10 text-xs font-black uppercase italic tracking-widest text-zinc-300 hover:text-white hover:bg-white/5 transition-all">

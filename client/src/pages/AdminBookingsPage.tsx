@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { gsap } from 'gsap';
 import { apiFetch, authHeader } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -22,6 +23,7 @@ type BookingRow = {
 
 export function AdminBookingsPage() {
   const { token } = useAuth();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<BookingRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,6 @@ export function AdminBookingsPage() {
   const load = async () => {
     setError(null);
     setLoading(true);
-
     try {
       const data = await apiFetch('/admin/bookings', { headers: authHeader(token) });
       setItems(data.bookings || []);
@@ -47,9 +48,17 @@ export function AdminBookingsPage() {
     load();
   }, []);
 
+  useLayoutEffect(() => {
+    if (loading) return;
+    const ctx = gsap.context(() => {
+      gsap.from('.kinetic-header', { y: -50, opacity: 0, duration: 1, ease: 'power4.out' });
+      gsap.from('.bg-zinc-900', { y: 50, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.2 });
+    }, containerRef);
+    return () => ctx.revert();
+  }, [loading]);
+
   const updateStatus = async (id: string, status: string) => {
     setError(null);
-
     try {
       await apiFetch(`/admin/bookings/${encodeURIComponent(id)}`, {
         method: 'PUT',
@@ -57,172 +66,105 @@ export function AdminBookingsPage() {
         body: JSON.stringify({ status }),
       });
       await load();
+      if (selectedBooking && selectedBooking.id === id) {
+        setSelectedBooking(prev => prev ? ({ ...prev, status }) : null);
+      }
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
-  const filteredItems = filterStatus === 'all' 
-    ? items 
+  const filteredItems = filterStatus === 'all'
+    ? items
     : items.filter(b => b.status === filterStatus);
 
   const statusColors: Record<string, string> = {
-    pending_contact: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-green-100 text-green-800',
-    completed: 'bg-blue-100 text-blue-800',
-    cancelled: 'bg-red-100 text-red-800',
+    pending_contact: 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10',
+    confirmed: 'text-green-500 border-green-500/30 bg-green-500/10',
+    completed: 'text-blue-500 border-blue-500/30 bg-blue-500/10',
+    cancelled: 'text-red-500 border-red-500/30 bg-red-500/10',
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="bg-white border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-700 mb-2">
-                ← Back to Dashboard
-              </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-              <p className="mt-1 text-gray-600">Manage all package bookings.</p>
-            </div>
-            <button onClick={load} className="px-3 py-2 rounded-md border text-sm hover:bg-gray-50">
-              Refresh
-            </button>
+    <div ref={containerRef} className="bg-black min-h-screen pt-24 pb-12 px-4 selection:bg-red-600 font-sans text-zinc-100">
+      <div className="max-w-[90rem] mx-auto">
+        <div className="kinetic-header flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12 border-b border-white/10 pb-8">
+          <div>
+            <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-bold text-zinc-500 hover:text-red-600 mb-4 transition-colors uppercase tracking-widest">
+              ← Back to Dashboard
+            </Link>
+            <h1 className="text-5xl md:text-7xl font-black italic uppercase text-white tracking-tighter">
+              Manage <span className="text-red-600">Bookings</span>
+            </h1>
+            <p className="mt-4 text-xl text-zinc-400 max-w-2xl border-l-4 border-red-600 pl-6">
+              Oversee all package bookings.
+            </p>
           </div>
+          <button onClick={load} className="px-6 py-3 rounded-full border border-white/10 text-white font-bold uppercase tracking-widest text-xs hover:bg-white/5 transition-colors">
+            Refresh
+          </button>
+        </div>
 
-          {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>
-          )}
+        {error && <div className="mb-8 rounded-xl border border-red-900/50 bg-red-950/30 px-6 py-4 text-sm font-bold text-red-200 animate-pulse">{error}</div>}
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-3 py-2 rounded-md text-sm ${filterStatus === 'all' ? 'bg-red-700 text-white' : 'border hover:bg-gray-50'}`}
-            >
-              All ({items.length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('pending_contact')}
-              className={`px-3 py-2 rounded-md text-sm ${filterStatus === 'pending_contact' ? 'bg-red-700 text-white' : 'border hover:bg-gray-50'}`}
-            >
-              Pending ({items.filter(b => b.status === 'pending_contact').length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('confirmed')}
-              className={`px-3 py-2 rounded-md text-sm ${filterStatus === 'confirmed' ? 'bg-red-700 text-white' : 'border hover:bg-gray-50'}`}
-            >
-              Confirmed ({items.filter(b => b.status === 'confirmed').length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('completed')}
-              className={`px-3 py-2 rounded-md text-sm ${filterStatus === 'completed' ? 'bg-red-700 text-white' : 'border hover:bg-gray-50'}`}
-            >
-              Completed ({items.filter(b => b.status === 'completed').length})
-            </button>
-            <button
-              onClick={() => setFilterStatus('cancelled')}
-              className={`px-3 py-2 rounded-md text-sm ${filterStatus === 'cancelled' ? 'bg-red-700 text-white' : 'border hover:bg-gray-50'}`}
-            >
-              Cancelled ({items.filter(b => b.status === 'cancelled').length})
-            </button>
+        <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 shadow-2xl">
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {['all', 'pending_contact', 'confirmed', 'completed', 'cancelled'].map(status => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all ${filterStatus === status
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-900/20 scale-105'
+                    : 'bg-black border border-white/10 text-zinc-500 hover:text-white hover:border-white/30'
+                  }`}
+              >
+                {status.replace('_', ' ')} ({status === 'all' ? items.length : items.filter(b => b.status === status).length})
+              </button>
+            ))}
           </div>
 
           {loading ? (
-            <div className="mt-6 text-gray-600">Loading…</div>
+            <div className="text-center py-20 text-2xl font-black text-zinc-700 uppercase animate-pulse">Loading Bookings...</div>
           ) : filteredItems.length === 0 ? (
-            <div className="mt-6 rounded-xl border bg-gray-50 p-8 text-center text-gray-600">
-              {filterStatus === 'all' ? 'No bookings yet.' : `No ${filterStatus.replace('_', ' ')} bookings.`}
+            <div className="text-center py-20 bg-black/50 rounded-2xl border border-white/5">
+              <p className="text-xl font-bold text-zinc-500 uppercase">No bookings found</p>
             </div>
           ) : (
-            <div className="mt-6 overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-600 border-b">
-                    <th className="py-2 pr-4">Booking ID</th>
-                    <th className="py-2 pr-4">Date</th>
-                    <th className="py-2 pr-4">Guest</th>
-                    <th className="py-2 pr-4">Contact</th>
-                    <th className="py-2 pr-4">Travelers</th>
-                    <th className="py-2 pr-4">Status</th>
-                    <th className="py-2 pr-4">Actions</th>
+                  <tr className="text-left text-zinc-500 border-b border-white/10 font-black uppercase tracking-wider text-xs">
+                    <th className="py-4 pr-4">ID</th>
+                    <th className="py-4 pr-4">Date</th>
+                    <th className="py-4 pr-4">Guest</th>
+                    <th className="py-4 pr-4">Contact</th>
+                    <th className="py-4 pr-4">Travelers</th>
+                    <th className="py-4 pr-4">Status</th>
+                    <th className="py-4 pr-4">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-white/5">
                   {filteredItems.map((b) => (
-                    <tr key={b.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 pr-4 text-xs text-gray-500 font-mono max-w-[100px] truncate" title={b.id}>
-                        {b.id.slice(0, 8)}...
-                      </td>
-                      <td className="py-3 pr-4 font-medium text-gray-900">
-                        {new Date(b.booking_date).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 pr-4 text-gray-700">
-                        <div className="font-medium">{b.guest_full_name}</div>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-700">
-                        <a 
-                          href={`https://wa.me/${b.whatsapp_number.replace(/\+/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-700 hover:underline"
-                        >
-                          {b.whatsapp_number}
+                    <tr key={b.id} className="hover:bg-white/5 transition-colors group">
+                      <td className="py-4 pr-4 font-mono text-zinc-600 group-hover:text-zinc-400">{b.id.slice(0, 8)}...</td>
+                      <td className="py-4 pr-4 font-bold text-white">{new Date(b.booking_date).toLocaleDateString()}</td>
+                      <td className="py-4 pr-4 font-bold text-white">{b.guest_full_name}</td>
+                      <td className="py-4 pr-4 text-green-500 font-mono tracking-tighter">
+                        <a href={`https://wa.me/${b.whatsapp_number.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-green-400 flex items-center gap-1">
+                          <span>✆</span> {b.whatsapp_number}
                         </a>
                       </td>
-                      <td className="py-3 pr-4 text-gray-700">
-                        <div className="text-xs">
-                          {b.adults > 0 && <div>Adults: {b.adults}</div>}
-                          {b.children > 0 && <div>Children: {b.children}</div>}
-                          {b.infants > 0 && <div>Infants: {b.infants}</div>}
-                          <div className="font-medium mt-1">Total: {b.traveler_count}</div>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span className={`px-2 py-1 rounded-full text-xs ${statusColors[b.status] || 'bg-gray-100 text-gray-800'}`}>
+                      <td className="py-4 pr-4 text-zinc-400 font-bold">{b.traveler_count}</td>
+                      <td className="py-4 pr-4">
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${statusColors[b.status] || 'text-zinc-500 border-zinc-500/30'}`}>
                           {b.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => setSelectedBooking(b)}
-                            className="px-2 py-1 rounded text-xs border hover:bg-gray-50 flex items-center justify-center gap-1"
-                            type="button"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View
-                          </button>
-                          {b.status !== 'confirmed' && (
-                            <button
-                              onClick={() => updateStatus(b.id, 'confirmed')}
-                              className="px-2 py-1 rounded text-xs bg-green-700 text-white hover:bg-green-600"
-                              type="button"
-                            >
-                              Confirm
-                            </button>
-                          )}
-                          {b.status !== 'completed' && (
-                            <button
-                              onClick={() => updateStatus(b.id, 'completed')}
-                              className="px-2 py-1 rounded text-xs bg-blue-700 text-white hover:bg-blue-600"
-                              type="button"
-                            >
-                              Complete
-                            </button>
-                          )}
-                          {b.status !== 'cancelled' && (
-                            <button
-                              onClick={() => updateStatus(b.id, 'cancelled')}
-                              className="px-2 py-1 rounded text-xs bg-red-700 text-white hover:bg-red-600"
-                              type="button"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </div>
+                      <td className="py-4 pr-4">
+                        <button onClick={() => setSelectedBooking(b)} className="px-3 py-1.5 rounded-lg border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 hover:scale-105 transition-all">
+                          View
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -233,149 +175,44 @@ export function AdminBookingsPage() {
         </div>
 
         {selectedBooking && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedBooking(null)}>
-            <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
-                <button
-                  onClick={() => setSelectedBooking(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                  type="button"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 z-50 animate-in fade-in duration-300" onClick={() => setSelectedBooking(null)}>
+            <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setSelectedBooking(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+
+              <div className="mb-8">
+                <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Booking Details</div>
+                <h2 className="text-3xl font-black italic uppercase text-white">{selectedBooking.guest_full_name}</h2>
+                <div className={`mt-2 inline-block px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest border ${statusColors[selectedBooking.status]}`}>
+                  {selectedBooking.status.replace('_', ' ')}
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Booking ID</div>
-                  <div className="mt-1 text-sm text-gray-900 font-mono break-all">{selectedBooking.id}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Date</div>
+                  <div className="text-white font-bold">{new Date(selectedBooking.booking_date).toLocaleDateString()}</div>
                 </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Package ID</div>
-                  <div className="mt-1 text-sm text-gray-900 font-mono break-all">{selectedBooking.package_id}</div>
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Travelers</div>
+                  <div className="text-white font-bold">{selectedBooking.traveler_count} (Ad: {selectedBooking.adults}, Ch: {selectedBooking.children}, In: {selectedBooking.infants})</div>
                 </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Booking Date</div>
-                  <div className="mt-1 text-sm text-gray-900">{new Date(selectedBooking.booking_date).toLocaleDateString()}</div>
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Contact</div>
+                  <a href={`https://wa.me/${selectedBooking.whatsapp_number.replace(/\+/g, '')}`} target="_blank" className="text-green-500 font-mono font-bold hover:underline">{selectedBooking.whatsapp_number}</a>
                 </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Guest Name</div>
-                  <div className="mt-1 text-sm text-gray-900">{selectedBooking.guest_full_name}</div>
+                <div className="bg-black/50 p-4 rounded-xl border border-white/5">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Note</div>
+                  <div className="text-white font-medium italic">{selectedBooking.note || 'None'}</div>
                 </div>
+              </div>
 
-                <div>
-                  <div className="text-sm font-medium text-gray-500">WhatsApp Number</div>
-                  <div className="mt-1">
-                    <a 
-                      href={`https://wa.me/${selectedBooking.whatsapp_number.replace(/\+/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-green-700 hover:underline"
-                    >
-                      {selectedBooking.whatsapp_number}
-                    </a>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Travelers</div>
-                  <div className="mt-1 text-sm text-gray-900">
-                    <div>Adults: {selectedBooking.adults}</div>
-                    <div>Children: {selectedBooking.children}</div>
-                    <div>Infants: {selectedBooking.infants}</div>
-                    <div className="font-medium mt-1">Total: {selectedBooking.traveler_count}</div>
-                  </div>
-                </div>
-
-                {selectedBooking.note && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-500">Note</div>
-                    <div className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{selectedBooking.note}</div>
-                  </div>
-                )}
-
-                {selectedBooking.user_id && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-500">User ID</div>
-                    <div className="mt-1 text-sm text-gray-900 font-mono break-all">{selectedBooking.user_id}</div>
-                  </div>
-                )}
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Status</div>
-                  <div className="mt-1">
-                    <span className={`px-2 py-1 rounded-full text-xs ${statusColors[selectedBooking.status] || 'bg-gray-100 text-gray-800'}`}>
-                      {selectedBooking.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Created At</div>
-                  <div className="mt-1 text-sm text-gray-900">{new Date(selectedBooking.created_at).toLocaleString()}</div>
-                </div>
-
-                <div>
-                  <div className="text-sm font-medium text-gray-500">Updated At</div>
-                  <div className="mt-1 text-sm text-gray-900">{new Date(selectedBooking.updated_at).toLocaleString()}</div>
-                </div>
-
-                <div className="pt-4 flex flex-wrap gap-2">
-                  {selectedBooking.status !== 'confirmed' && (
-                    <button
-                      onClick={() => {
-                        updateStatus(selectedBooking.id, 'confirmed');
-                        setSelectedBooking(null);
-                      }}
-                      className="px-4 py-2 rounded-md bg-green-700 text-white text-sm hover:bg-green-600"
-                      type="button"
-                    >
-                      Confirm
-                    </button>
-                  )}
-                  {selectedBooking.status !== 'completed' && (
-                    <button
-                      onClick={() => {
-                        updateStatus(selectedBooking.id, 'completed');
-                        setSelectedBooking(null);
-                      }}
-                      className="px-4 py-2 rounded-md bg-blue-700 text-white text-sm hover:bg-blue-600"
-                      type="button"
-                    >
-                      Complete
-                    </button>
-                  )}
-                  {selectedBooking.status !== 'cancelled' && (
-                    <button
-                      onClick={() => {
-                        updateStatus(selectedBooking.id, 'cancelled');
-                        setSelectedBooking(null);
-                      }}
-                      className="px-4 py-2 rounded-md bg-red-700 text-white text-sm hover:bg-red-600"
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                  {selectedBooking.status !== 'pending_contact' && (
-                    <button
-                      onClick={() => {
-                        updateStatus(selectedBooking.id, 'pending_contact');
-                        setSelectedBooking(null);
-                      }}
-                      className="px-4 py-2 rounded-md border text-sm hover:bg-gray-50"
-                      type="button"
-                    >
-                      Set to Pending
-                    </button>
-                  )}
-                </div>
+              <div className="flex flex-wrap gap-3 pt-6 border-t border-white/10 justify-end">
+                {selectedBooking.status !== 'confirmed' && <button onClick={() => updateStatus(selectedBooking.id, 'confirmed')} className="px-5 py-2 rounded-full bg-green-600 text-white font-bold uppercase text-xs hover:bg-green-700">Confirm</button>}
+                {selectedBooking.status !== 'completed' && <button onClick={() => updateStatus(selectedBooking.id, 'completed')} className="px-5 py-2 rounded-full bg-blue-600 text-white font-bold uppercase text-xs hover:bg-blue-700">Complete</button>}
+                {selectedBooking.status !== 'cancelled' && <button onClick={() => updateStatus(selectedBooking.id, 'cancelled')} className="px-5 py-2 rounded-full bg-red-600 text-white font-bold uppercase text-xs hover:bg-red-700">Cancel</button>}
+                {selectedBooking.status !== 'pending_contact' && <button onClick={() => updateStatus(selectedBooking.id, 'pending_contact')} className="px-5 py-2 rounded-full border border-yellow-600/50 text-yellow-500 font-bold uppercase text-xs hover:bg-yellow-600/10">Set Pending</button>}
               </div>
             </div>
           </div>

@@ -9,6 +9,8 @@ import { reviewRouter } from './reviewRoutes.js';
 import { uploadRouter } from './uploadRoutes.js';
 import { userRouter } from './userRoutes.js';
 import { siteContentRouter } from './siteContentRoutes.js';
+import { notificationRouter } from './notificationRoutes.js';
+import { offerRouter } from './offerRoutes.js';
 
 export function mountRoutes(app) {
   app.use(healthRouter);
@@ -22,4 +24,6 @@ export function mountRoutes(app) {
   app.use(uploadRouter);
   app.use(userRouter);
   app.use(siteContentRouter);
+  app.use('/notifications', notificationRouter);
+  app.use('/offers', offerRouter);
 }

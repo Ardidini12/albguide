@@ -2,6 +2,7 @@ import { pool } from '../config/db.js';
 import { createBooking, listBookings, updateBookingById } from '../models/bookingModel.js';
 import { findPackageById } from '../models/packageModel.js';
 import { getAvailability, isDateAvailable } from '../models/packageAvailabilityModel.js';
+import { notifyAdmins, notifyUser } from './notificationService.js';
 
 function isValidE164(value) {
   return typeof value === 'string' && /^\+[1-9]\d{7,14}$/.test(value);
@@ -131,6 +132,10 @@ export async function createBookingAnyUser({
       );
 
       await client.query('commit');
+      
+      // Notify admins
+      notifyAdmins('New Booking', `New booking from ${fullName}`, 'booking_new', { bookingId: booking.rows[0].id });
+      
       return booking.rows[0];
     } catch (err) {
       if (String(err?.code) === '23505' && idempotencyKey) {
@@ -171,5 +176,9 @@ export async function updateBookingStatusAdmin(id, status) {
     throw err;
   }
 
-  return await updateBookingById(id, { status });
+  const booking = await updateBookingById(id, { status });
+  if (booking && booking.user_id) {
+    notifyUser(booking.user_id, 'Booking Update', `Your booking status is now ${status}`, 'booking_update', { bookingId: id });
+  }
+  return booking;
 }

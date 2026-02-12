@@ -26,6 +26,8 @@ import { UserBookingsPage } from './pages/UserBookingsPage'
 import { UserFavoritesPage } from './pages/UserFavoritesPage'
 import { UserReviewsPage } from './pages/UserReviewsPage'
 import { UserProfilePage } from './pages/UserProfilePage'
+import { AdminOffersPage } from './pages/AdminOffersPage'
+import { OffersPage } from './pages/OffersPage'
 
 export default function App() {
   return (
@@ -37,6 +39,7 @@ export default function App() {
         <Route path="/destinations" element={<DestinationsPage />} />
         <Route path="/destinations/:slug" element={<DestinationsDetailsPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/offers" element={<OffersPage />} />
         <Route path="/support" element={<SupportPage />} />
 
         <Route path="/terms" element={<SimpleInfoPage title="Terms of Use" />} />
@@ -135,6 +138,15 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminPackagesPage />
+            </RequireAdmin>
+          }
+        />
+
+        <Route
+          path="/admin/offers"
+          element={
+            <RequireAdmin>
+              <AdminOffersPage />
             </RequireAdmin>
           }
         />

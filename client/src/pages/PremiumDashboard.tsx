@@ -42,7 +42,7 @@ const ALBANIA_IMAGES = [
   description: 'The colorful heart of Albania, a city that never sleeps.',
  },
  {
-  url: 'https://images.unsplash.com/photo-1542385152-45601d51c416?q=80&w=1470&auto=format&fit=crop',
+  url: 'https://usercontent.one/wp/stage.greenor.no/wp-content/uploads/2024/02/sk89o3vu0ainzxhbq2cgpdjw61y4fe5m-1920x1440.jpeg?media=1712405487',
   title: 'TRAIL OF COLORS',
   description: 'A stunning fusion of alpine splendor and authentic highland culture in scenic Kukës.',
  },
@@ -131,14 +131,17 @@ export function PremiumDashboard() {
    });
 
    // Button slam
-   gsap.from('.cta-btn', {
-    scale: 0.8,
-    opacity: 0,
-    duration: 1,
-    delay: 1,
-    stagger: 0.2,
-    ease: 'elastic.out(1, 0.5)',
-   });
+   gsap.fromTo('.cta-btn',
+    { scale: 0.8, opacity: 0 },
+    {
+     scale: 1,
+     opacity: 1,
+     duration: 1,
+     delay: 1,
+     stagger: 0.2,
+     ease: 'elastic.out(1, 0.5)',
+    }
+   );
   }, containerRef);
 
   return () => ctx.revert();
@@ -175,14 +178,14 @@ export function PremiumDashboard() {
      <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
       <Link
        to="/packages"
-       className="cta-btn group relative px-12 py-5 bg-red-700 overflow-hidden font-black uppercase italic tracking-widest text-xl transition-all hover:bg-red-600 hover:scale-110 active:scale-95 shadow-[0_20px_50px_rgba(185,28,28,0.3)]"
+       className="cta-btn group relative px-12 py-5 bg-red-700 text-white overflow-hidden font-black uppercase italic tracking-widest text-xl transition-all hover:bg-red-600 hover:scale-110 active:scale-95 shadow-[0_20px_50px_rgba(185,28,28,0.3)]"
       >
        <span className="relative z-10">Explore Packages</span>
        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine"></div>
       </Link>
       <Link
        to="/destinations"
-       className="cta-btn group px-12 py-5 border-4 border-white/80 hover:border-white hover:bg-white hover:text-black font-black uppercase italic tracking-widest text-xl transition-all hover:scale-110 active:scale-95 shadow-2xl"
+       className="cta-btn group px-12 py-5 border-4 border-white/80 text-white hover:border-white hover:bg-white hover:text-black font-black uppercase italic tracking-widest text-xl transition-all hover:scale-110 active:scale-95 shadow-2xl"
       >
        View Destinations
       </Link>
